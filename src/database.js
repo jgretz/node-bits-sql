@@ -53,7 +53,7 @@ const mapSchema = (sequelize, name, schema) => {
   return _.omitBy(mapped, _.isNull);
 };
 
-export default class Postgre {
+export default class Sql {
   constructor(config) {
     this.config = config;
     this.models = [];
@@ -61,7 +61,7 @@ export default class Postgre {
 
   // connection
   connect() {
-    this.sequelize = new Sequelize(this.config.connection);
+    this.sequelize = this.config.sequelize;
     this.sequelize.authenticate()
       .catch(() => { this.sequelize = null; });
   }

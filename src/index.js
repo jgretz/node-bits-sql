@@ -1,4 +1,4 @@
-import Postgre from './database';
+import Sql from './database';
 
 // compile
 const compileConfiguration = (options = {}, bitsConfig) => {
@@ -12,7 +12,7 @@ export default (options) =>
 ({
   initializeDatabase: (bitsConfig) =>  {
     const config = compileConfiguration(options, bitsConfig);
-    const database = new Postgre(config);
+    const database = new Sql(config);
 
     database.connect();
 
