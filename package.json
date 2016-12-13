@@ -1,7 +1,7 @@
 {
-  "name": "node-bits-postgre",
+  "name": "node-bits-sql",
   "version": "0.0.1",
-  "description": "Provides the logic for connecting bits to a postgre database",
+  "description": "Provides the logic for connecting bits to a sql database",
   "main": "lib/index.js",
   "scripts": {
     "start": "nodemon src/index.js --exec babel-node",
@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jgretz/node-bits-postgre.git"
+    "url": "git+https://github.com/jgretz/node-bits-sql.git"
   },
   "author": "Josh Gretz",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jgretz/node-bits-postgre/issues"
+    "url": "https://github.com/jgretz/node-bits-sql/issues"
   },
-  "homepage": "https://github.com/jgretz/node-bits-postgre#readme",
+  "homepage": "https://github.com/jgretz/node-bits-sql#readme",
   "dependencies": {
     "lodash": "^4.17.2",
     "sequelize": "^3.27.0"
