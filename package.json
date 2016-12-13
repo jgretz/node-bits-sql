@@ -1,6 +1,6 @@
 {
-  "name": "node-bits-code",
-  "version": "0.0.2",
+  "name": "node-bits-postgre",
+  "version": "0.0.1",
   "description": "Provides the logic for connecting bits to a postgre database",
   "main": "lib/index.js",
   "scripts": {
