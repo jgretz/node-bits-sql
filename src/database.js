@@ -14,16 +14,30 @@ const map = {
   DOUBLE: Sequelize.DOUBLE,
   FLOAT: Sequelize.FLOAT,
   UUID: Sequelize.UUID,
+};
 
-  Number: Sequelize.DECIMAL,
-  String: Sequelize.STRING,
-  Date: Sequelize.DATE,
-  Boolean: Sequelize.BOOLEAN,
+const mapType = (value) => {
+  switch (value) {
+    case Number:
+      return Sequelize.DECIMAL;
+
+    case String:
+      return Sequelize.STRING;
+
+    case Date:
+      return Sequelize.DATE;
+
+    case Boolean:
+      return Sequelize.BOOLEAN;
+
+    default:
+      return undefined;
+  }
 };
 
 const mapField = (value) => {
   if (_.isFunction(value)) {
-    return { type: map[value] };
+    return { type: mapType(value) };
   }
 
   const type = map[value.type];
@@ -43,11 +57,11 @@ const mapField = (value) => {
 const mapSchema = (sequelize, name, schema) => {
   const mapped = _.mapValues(schema, (value, key) => {
     if (_.isArray(value)) {
-      _.sequelize.define(name, mapSchema(this.sequelize, `${name}_${key}`, value));
+      // we don't support this right now, define everything as 1st level
       return null;
     }
 
-    return mapField(value);
+    return mapField(value, key);
   });
 
   return _.omitBy(mapped, _.isNull);
@@ -61,7 +75,7 @@ export default class Sql {
 
   // connection
   connect() {
-    this.sequelize = this.config.sequelize;
+    this.sequelize = this.config.connect();
     this.sequelize.authenticate()
       .catch(() => { this.sequelize = null; });
   }
@@ -84,7 +98,10 @@ export default class Sql {
   }
 
   removeSchema(name) {
-    this.models[name].drop();
+    const model = this.model(name);
+    if (model) {
+      model.drop();
+    }
   }
 
   model(name) {
