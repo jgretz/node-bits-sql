@@ -1,57 +1,14 @@
 import _ from 'lodash';
-import Sequelize from 'sequelize';
+import { mapFuncType, mapComplexType } from './util';
 
-// database types
-export const INTEGER = 'INTEGER';
-export const DECIMAL = 'DECIMAL';
-export const DOUBLE = 'DOUBLE';
-export const FLOAT = 'FLOAT';
-export const UUID = 'UUID';
-
-const map = {
-  INTEGER: Sequelize.INTEGER,
-  DECIMAL: Sequelize.DECIMAL,
-  DOUBLE: Sequelize.DOUBLE,
-  FLOAT: Sequelize.FLOAT,
-  UUID: Sequelize.UUID,
-};
-
-const mapType = (value) => {
-  switch (value) {
-    case Number:
-      return Sequelize.DECIMAL;
-
-    case String:
-      return Sequelize.STRING;
-
-    case Date:
-      return Sequelize.DATE;
-
-    case Boolean:
-      return Sequelize.BOOLEAN;
-
-    default:
-      return undefined;
-  }
-};
-
+// helpers
 const mapField = (value) => {
+  let definition = value;
   if (_.isFunction(value)) {
-    return { type: mapType(value) };
+    definition = { type: mapFuncType(value) };
   }
 
-  const type = map[value.type];
-  if (!type) {
-    return undefined;
-  }
-
-  // construct field this way so that we can handle the defaults
-  const {
-    allowNull = true, unique = false, defaultValue = null, autoIncrement = false,
-    precision = null, scale = null,
-  } = value;
-
-  return { type, allowNull, unique, defaultValue, autoIncrement, precision, scale };
+  return mapComplexType(definition);
 };
 
 const mapSchema = (sequelize, name, schema) => {
@@ -67,6 +24,7 @@ const mapSchema = (sequelize, name, schema) => {
   return _.omitBy(mapped, _.isNull);
 };
 
+// Sql Class
 export default class Sql {
   constructor(config) {
     this.config = config;
@@ -88,7 +46,7 @@ export default class Sql {
       this.updateSchema(key, schema[key]);
     });
 
-    this.sequelize.sync();
+    this.sequelize.sync({ force: this.config.forceSync });
   }
 
   updateSchema(name, schema) {

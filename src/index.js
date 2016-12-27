@@ -1,8 +1,13 @@
 import Sql from './database';
 
+// other exports
+export * from './util/constants';
+
 // compile
 const compileConfiguration = (options = {}, bitsConfig) => {
   return {
+    forceSync: false,
+
     ...options,
     ...bitsConfig,
   };
