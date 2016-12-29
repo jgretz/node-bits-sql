@@ -1,9 +1,7 @@
 import _ from 'lodash';
-import {
-  mapFuncType, mapComplexType,
-  QUERY, INSERT, UPDATE, DELETE,
-  BEFORE, AFTER,
-} from './util';
+import { QUERY, INSERT, UPDATE, DELETE, BEFORE, AFTER } from 'node-bits';
+
+import { mapFuncType, mapComplexType } from './util';
 
 // helpers
 const mapField = (value) => {

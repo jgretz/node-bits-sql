@@ -1,4 +1,4 @@
-import { STRING, DECIMAL, DATE, BOOLEAN } from './constants';
+import { STRING, DECIMAL, DATE, BOOLEAN } from 'node-bits';
 
 export const mapFuncType = (type) => {
   switch (type) {
