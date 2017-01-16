@@ -105,7 +105,7 @@ export default class Sql {
 
   findById(name, id) {
     const logic = (model, args) => model.findById(args.id)
-      .then(result => result.length === 0 ? null : result[0].dataValues);
+      .then(result => result.length === 0 ? null : result.dataValues);
 
     return this.execute(name, QUERY, { id }, logic);
   }
