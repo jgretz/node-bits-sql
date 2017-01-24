@@ -33,7 +33,7 @@ const resolveType = (defType, size, precision, scale) => {
 export const mapComplexType = (definition) => {
   // break apart so we can set defaults
   const {
-    type, size = null, precision = null, scale = null,
+    type, size = null, precision = null, scale = null, primaryKey = false,
     allowNull = true, unique = false, defaultValue = null, autoIncrement = false,
   } = definition;
 
@@ -44,5 +44,5 @@ export const mapComplexType = (definition) => {
   }
 
   // return the sequelize definition
-  return { type: resolvedType, allowNull, unique, defaultValue, autoIncrement };
+  return { type: resolvedType, allowNull, unique, defaultValue, autoIncrement, primaryKey };
 };

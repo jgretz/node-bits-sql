@@ -1,36 +1,30 @@
 import _ from 'lodash';
+import { logWarning, logError } from 'node-bits';
 import { Database } from 'node-bits-internal-database';
 
+import { flattenSchema } from './flatten_schema';
 import { mapComplexType } from './map_complex_type';
 
 // helpers
 const mapSchema = (schema) => {
-  const mapped = _.mapValues(schema, (value) => {
-    if (_.isArray(value)) {
-      // we don't support this right now, define everything as 1st level
-      return null;
-    }
-
-    return mapComplexType(value);
-  });
-
-  return _.omitBy(mapped, _.isNull);
+  return _.mapValues(schema, (value) => mapComplexType(value));
 };
 
-// configure the sequel specific logic
+// configure the sequelize specific logic
 let sequelize = null;
 
 const implementation = {
-  connect(connection) {
-    sequelize = connection();
+  // connect
+  connect(config) {
+    sequelize = config.connection();
     sequelize.authenticate()
-      .catch(() => { sequelize = null; });
+      .catch((err) => {
+        logError('Unable to authenticate database connection: ', err);
+        sequelize = null;
+      });
   },
 
-  afterSynchronizeSchema(forceSync) {
-    sequelize.sync({ force: forceSync });
-  },
-
+  //schema
   updateSchema(name, schema) {
     return sequelize.define(name, mapSchema(schema));
   },
@@ -40,6 +34,37 @@ const implementation = {
       model.drop();
     }
   },
+
+  beforeSynchronizeSchema(config, db) {
+    return flattenSchema(db);
+  },
+
+  afterSynchronizeSchema(config) {
+    sequelize.sync({ force: config.forceSync });
+  },
+
+  defineRelationships(config, models, db) {
+    const logic = {
+      ONE_TO_ONE: (model, reference) => model.belongsTo(reference),
+      ONE_TO_MANY: (model, reference) => reference.hasMany(model),
+    };
+
+    _.forEach(db.relationships, (rel) => {
+      const model = models[rel.model];
+      const reference = models[rel.references];
+      const apply = logic[rel.type];
+
+      if (!model || !reference || !apply) {
+        logWarning(`This relationship has not been added due to a misconfiguration
+          ${JSON.stringify(rel)}`);
+        return;
+      }
+
+      logic[rel.type](model, reference);
+    });
+  },
+
+  defineIndexes() {},
 
   // CRUD
   findById(model, args) {
