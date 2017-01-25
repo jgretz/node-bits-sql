@@ -4,6 +4,7 @@ import { Database } from 'node-bits-internal-database';
 
 import { flattenSchema } from './flatten_schema';
 import { mapComplexType } from './map_complex_type';
+import { defineIndexesForSchema } from './define_indexes_for_schema';
 
 // helpers
 const mapSchema = (schema) => {
@@ -25,8 +26,8 @@ const implementation = {
   },
 
   //schema
-  updateSchema(name, schema) {
-    return sequelize.define(name, mapSchema(schema));
+  updateSchema(name, schema, db) {
+    return sequelize.define(name, mapSchema(schema), defineIndexesForSchema(name, db));
   },
 
   removeSchema(name, model) {
@@ -63,8 +64,6 @@ const implementation = {
       logic[rel.type](model, reference);
     });
   },
-
-  defineIndexes() {},
 
   // CRUD
   findById(model, args) {
