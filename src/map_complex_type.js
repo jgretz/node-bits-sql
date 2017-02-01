@@ -1,7 +1,4 @@
-import _ from 'lodash';
 import Sequelize from 'sequelize';
-
-import { mapFuncType } from './map_func_type';
 
 // map to get the sequelize type definition
 const map = {
@@ -29,19 +26,14 @@ const map = {
 };
 
 const resolveType = (defType, size, precision, scale) => {
-  let internalType = defType;
-  if (_.isFunction(defType)) {
-    internalType = mapFuncType(defType);
-  }
-
-  const resolve = map[internalType];
+  const resolve = map[defType];
   return resolve ? resolve(size, precision, scale) : undefined;
 };
 
 export const mapComplexType = (definition) => {
   // break apart so we can set defaults
   const {
-    type, size = null, precision = null, scale = null,
+    type, size = null, precision = null, scale = null, primaryKey = false,
     allowNull = true, unique = false, defaultValue = null, autoIncrement = false,
   } = definition;
 
@@ -52,5 +44,5 @@ export const mapComplexType = (definition) => {
   }
 
   // return the sequelize definition
-  return { type: resolvedType, allowNull, unique, defaultValue, autoIncrement };
+  return { type: resolvedType, allowNull, unique, defaultValue, autoIncrement, primaryKey };
 };
