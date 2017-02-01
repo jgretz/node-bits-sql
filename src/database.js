@@ -48,7 +48,7 @@ const implementation = {
     const logic = {
       ONE_TO_ONE: (model, reference) => model.belongsTo(reference),
       ONE_TO_MANY: (model, reference) => reference.hasMany(model),
-      MANY_TO_MANY: (model, reference) => model.belongsToMany(reference, {through:model.getTableName() + "_" + reference.getTableName()}),
+      MANY_TO_MANY: (model, reference) => model.belongsToMany(reference, {through:`${model.getTableName()}_${reference.getTableName()}`}),
     };
 
     _.forEach(db.relationships, (rel) => {
@@ -63,7 +63,7 @@ const implementation = {
       }
       
       logic[rel.type](model, reference);
-    });
+    }); 
   },
 
   // CRUD
