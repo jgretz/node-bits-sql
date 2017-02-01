@@ -66,10 +66,10 @@ const implementation = {
   },
 
   // CRUD
-  findById(model, args) {
-    return model.findById(args.id)
-      .then(result => result.length === 0 ? null : result.dataValues);
-  },
+  findById(name, id) {
+    const logic = (model, args) => model.findById(args.id)
+      .then(result => result ? result.dataValues : null);
+  }
 
   find(model, args) {
     return model.findAll({ where: args.query })
