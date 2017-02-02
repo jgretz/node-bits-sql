@@ -25,6 +25,10 @@ const implementation = {
       });
   },
 
+  rawConnection() {
+    return sequelize;
+  },
+
   //schema
   updateSchema(name, schema, db) {
     return sequelize.define(name, mapSchema(schema), defineIndexesForSchema(name, db));
@@ -48,7 +52,9 @@ const implementation = {
     const logic = {
       ONE_TO_ONE: (model, reference) => model.belongsTo(reference),
       ONE_TO_MANY: (model, reference) => reference.hasMany(model),
-      MANY_TO_MANY: (model, reference) => model.belongsToMany(reference, {through:`${model.getTableName()}_${reference.getTableName()}`}),
+      MANY_TO_MANY: (model, reference) => model.belongsToMany(reference, {
+        through:`${model.getTableName()}_${reference.getTableName()}`
+      }),
     };
 
     _.forEach(db.relationships, (rel) => {
@@ -61,16 +67,16 @@ const implementation = {
           ${JSON.stringify(rel)}`);
         return;
       }
-      
+
       logic[rel.type](model, reference);
-    }); 
+    });
   },
 
   // CRUD
-  findById(name, id) {
-    const logic = (model, args) => model.findById(args.id)
+  findById(model, args) {
+    return model.findById(args.id)
       .then(result => result ? result.dataValues : null);
-  }
+  },
 
   find(model, args) {
     return model.findAll({ where: args.query })

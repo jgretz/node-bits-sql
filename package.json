@@ -1,6 +1,6 @@
 {
   "name": "node-bits-sql",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Provides the logic for connecting bits to a sql database",
   "main": "lib/index.js",
   "scripts": {
@@ -20,8 +20,8 @@
   "homepage": "https://github.com/jgretz/node-bits-sql#readme",
   "dependencies": {
     "lodash": "^4.17.4",
-    "node-bits": "^0.0.13",
-    "node-bits-internal-database": "^0.0.2",
+    "node-bits": "^0.0.14",
+    "node-bits-internal-database": "^0.0.3",
     "sequelize": "^3.28.0"
   },
   "devDependencies": {
