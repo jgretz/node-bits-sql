@@ -14,7 +14,7 @@ const isTableDef = (value) => {
 };
 
 export const flattenSchema = (db) => {
-  const result = { schema: {}, relationships: db.relationships, indexes: db.indexes };
+  const result = { ...db, schema: {} };
 
   const flattenNode = (key, node) => {
     const nodeResult = {};

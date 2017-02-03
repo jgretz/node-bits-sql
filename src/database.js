@@ -5,6 +5,7 @@ import { Database } from 'node-bits-internal-database';
 import { flattenSchema } from './flatten_schema';
 import { mapComplexType } from './map_complex_type';
 import { defineIndexesForSchema } from './define_indexes_for_schema';
+import { runMigrations } from './run_migrations';
 
 // helpers
 const mapSchema = (schema) => {
@@ -40,7 +41,9 @@ const implementation = {
     return flattenSchema(db);
   },
 
-  afterSynchronizeSchema(config) {
+  afterSynchronizeSchema(config, models, db) {
+    runMigrations(sequelize, db.migrations);
+
     sequelize.sync({ force: config.forceSync });
   },
 
