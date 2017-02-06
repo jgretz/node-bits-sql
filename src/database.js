@@ -6,6 +6,7 @@ import { flattenSchema } from './flatten_schema';
 import { mapComplexType } from './map_complex_type';
 import { defineIndexesForSchema } from './define_indexes_for_schema';
 import { runMigrations } from './run_migrations';
+import { defineRelationships } from './define_relationships';
 
 // helpers
 const mapSchema = (schema) => {
@@ -46,33 +47,18 @@ const implementation = {
   },
 
   afterSynchronizeSchema(config, models, db) {
-    runMigrations(sequelize, db.migrations);
+    const sync = () => { sequelize.sync({ force: config.forceSync }); };
 
-    sequelize.sync({ force: config.forceSync });
+    if (config.runMigrations) {
+      runMigrations(sequelize, db.migrations)
+        .then(sync);
+    } else {
+      sync();
+    }
   },
 
   defineRelationships(config, models, db) {
-    const logic = {
-      ONE_TO_ONE: (model, reference) => model.belongsTo(reference),
-      ONE_TO_MANY: (model, reference) => reference.hasMany(model),
-      MANY_TO_MANY: (model, reference) => model.belongsToMany(reference, {
-        through:`${model.getTableName()}_${reference.getTableName()}`
-      }),
-    };
-
-    _.forEach(db.relationships, (rel) => {
-      const model = models[rel.model];
-      const reference = models[rel.references];
-      const apply = logic[rel.type];
-
-      if (!model || !reference || !apply) {
-        logWarning(`This relationship has not been added due to a misconfiguration
-          ${JSON.stringify(rel)}`);
-        return;
-      }
-
-      logic[rel.type](model, reference);
-    });
+    defineRelationships(models, db);
   },
 
   // CRUD

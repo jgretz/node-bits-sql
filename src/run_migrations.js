@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import Sequelize from 'sequelize';
 import semver from 'semver';
-import { log, logError } from 'node-bits';
+import { log, logError, executeSeries } from 'node-bits';
 
-const MIGRATION_HISTORY = 'migrationHistories';
+const MIGRATIONS = 'migrations';
 const MODEL_MAP = {
   id: {
     type: Sequelize.INTEGER,
@@ -16,9 +16,12 @@ const MODEL_MAP = {
   assumedOnCreation: { type: Sequelize.BOOLEAN, defaultValue: false, allowNull: false }
 };
 
+const NO_MIGRATIONS = 'Database ready ... No migrations to run.';
+const MIGRATIONS_RUN = 'Database ready ... Migrations complete.';
+
 const getMigrationHistory = (sequelize) => {
   return new Promise((resolve, reject) => {
-    sequelize.query(`SELECT version FROM "${MIGRATION_HISTORY}"`)
+    sequelize.query(`SELECT version FROM ${MIGRATIONS}`)
       .then((migrations) => {
         const versions = migrations[0].map(m => m.version);
         resolve(versions);
@@ -28,12 +31,15 @@ const getMigrationHistory = (sequelize) => {
 };
 
 const createMigrationHistory = (sequelize, model, migrations) => {
-  sequelize.queryInterface.createTable(MIGRATION_HISTORY, MODEL_MAP);
-
   // create an entry for each of the migrations to date, so we don't run them in the future
-  _.forEach(migrations, migration => {
-    model.create({ version: migration.version, assumedOnCreation: true });
-  });
+  const seeds = migrations.map(migration =>
+    () => model.create({ version: migration.version, assumedOnCreation: true })
+  );
+
+  return executeSeries([
+    () => sequelize.queryInterface.createTable(MIGRATIONS, MODEL_MAP),
+    ...seeds,
+  ]);
 };
 
 const applyMigrations = (sequelize, model, migrations, migrationHistory) => {
@@ -41,50 +47,55 @@ const applyMigrations = (sequelize, model, migrations, migrationHistory) => {
   const toRun = _.reject(migrations, (migration) => migrationHistory.includes(migration.version));
 
   if (_.isEmpty(toRun)) {
-    log('Database is up to date, no migrations to run');
-    return;
+    log(NO_MIGRATIONS);
+    return Promise.resolve();
   }
 
-  const execute = (index) => {
-    if (index >= toRun.length) {
-      log('Migrations Complete');
-      return;
-    }
-
-    const migration = toRun[index];
-
+  const tasks = toRun.map(migration => () => {
     log(`Running Migration ${migration.version}`);
-    migration.migration.up(sequelize.queryInterface, sequelize)
-      .then(() => {
-        model.create({ version: migration.version })
-          .then(() => { execute(index + 1); });
-      })
+
+    return migration.migration.up(sequelize.queryInterface, sequelize)
+      .then(() => model.create({ version: migration.version }))
       .catch((err) => {
         log(`Migration ${migration.version} Failed:`);
         logError(err);
+
+        throw err;
       });
-  };
-  execute(0);
+    }
+  );
+
+  return executeSeries(tasks)
+    .then(() => { log(MIGRATIONS_RUN); });
 };
 
 export const runMigrations = (sequelize, migrations) => {
-  const model = sequelize.define(MIGRATION_HISTORY, MODEL_MAP);
+  const model = sequelize.define('migration', MODEL_MAP);
   migrations.sort((a, b) => {
     return semver.gt(a.version, b.version) ? 1 : semver.lt(a.version, b.version) ? -1 : 0;
   });
 
-  // see if we have a migrations record table, if not assume a new db
-  getMigrationHistory(sequelize)
-    .then((migrationHistory) => {
-      applyMigrations(sequelize, model, migrations, migrationHistory);
-    })
-    .catch(() => {
-      // the table doesn't exist, so we assume this is a new db and the schema is the latest
-      // with no need to run the migrations to this point
-      createMigrationHistory(sequelize, model, migrations);
-    });
-
-
-
-  // run the migrations
+  return new Promise((resolve) => {
+    // see if we have a migrations record table, if not assume a new db
+    getMigrationHistory(sequelize)
+      .then((migrationHistory) => {
+        // get this out of the promise chain, we don't want the catch to fire
+        // if the migration fails
+        setTimeout(() => {
+          applyMigrations(sequelize, model, migrations, migrationHistory)
+            .then(resolve)
+            .catch(resolve);
+        }, 0);
+      })
+      .catch(() => {
+        // the table doesn't exist, so we assume this is a new db and the schema is the latest
+        // with no need to run the migrations to this point
+        createMigrationHistory(sequelize, model, migrations)
+          .then(() => {
+            log(NO_MIGRATIONS);
+            resolve();
+          })
+          .catch(resolve);
+      });
+  });
 };
