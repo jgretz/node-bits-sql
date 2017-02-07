@@ -1,12 +1,11 @@
 import _ from 'lodash';
-import { logWarning, logError } from 'node-bits';
+import { logWarning, logError, executeSeries } from 'node-bits';
 import { Database } from 'node-bits-internal-database';
 
-import { flattenSchema } from './flatten_schema';
-import { mapComplexType } from './map_complex_type';
-import { defineIndexesForSchema } from './define_indexes_for_schema';
-import { runMigrations } from './run_migrations';
-import { defineRelationships } from './define_relationships';
+import {
+  flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
+  runMigrations, runSeeds,
+} from './util';
 
 // helpers
 const mapSchema = (schema) => {
@@ -47,14 +46,21 @@ const implementation = {
   },
 
   afterSynchronizeSchema(config, models, db) {
-    const sync = () => { sequelize.sync({ force: config.forceSync }); };
-
-    if (config.runMigrations) {
-      runMigrations(sequelize, db.migrations)
-        .then(sync);
-    } else {
-      sync();
+    const { forceSync } = config;
+    if (forceSync && config.runMigrations) {
+      logWarning(`forceSync and runMigrations are mutually exclusive.
+        node-bits-sql will prefer forceSync and not run migrations.`);
     }
+
+    const shouldRunMigrations = config.runMigrations && !forceSync;
+    const tasks = [
+      () => shouldRunMigrations ? runMigrations(sequelize, db.migrations) : Promise.resolve(),
+      () => sequelize.sync({ force: forceSync }),
+      () => config.runSeeds ? runSeeds(sequelize, models, db.seeds, forceSync) : Promise.resolve(),
+    ];
+
+    executeSeries(tasks)
+      .catch(logError);
   },
 
   defineRelationships(config, models, db) {

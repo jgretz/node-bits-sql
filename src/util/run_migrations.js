@@ -75,7 +75,7 @@ export const runMigrations = (sequelize, migrations) => {
     return semver.gt(a.version, b.version) ? 1 : semver.lt(a.version, b.version) ? -1 : 0;
   });
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // see if we have a migrations record table, if not assume a new db
     getMigrationHistory(sequelize)
       .then((migrationHistory) => {
@@ -84,7 +84,7 @@ export const runMigrations = (sequelize, migrations) => {
         setTimeout(() => {
           applyMigrations(sequelize, model, migrations, migrationHistory)
             .then(resolve)
-            .catch(resolve);
+            .catch(reject);
         }, 0);
       })
       .catch(() => {
@@ -95,7 +95,7 @@ export const runMigrations = (sequelize, migrations) => {
             log(NO_MIGRATIONS);
             resolve();
           })
-          .catch(resolve);
+          .catch(reject);
       });
   });
 };
