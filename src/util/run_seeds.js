@@ -17,8 +17,14 @@ const MODEL_MAP = {
 const NO_SEEDS = 'Database ready ... No seeds to run.';
 const SEEDS_RUN = 'Database ready ... Seeds planted.';
 
-const getSeedHistory = (sequelize) => {
+const getSeedHistory = (sequelize, forceSync) => {
   return new Promise((resolve) => {
+    if (forceSync) {
+      sequelize.query(`DELETE from ${SEEDS}`)
+        .then(() => resolve([]));
+        return;
+    }
+
     sequelize.query(`SELECT name FROM ${SEEDS}`)
       .then((seeds) => {
         const names = seeds[0].map(s => s.name);
@@ -31,9 +37,9 @@ const getSeedHistory = (sequelize) => {
     });
 };
 
-const plantSeeds = (sequelize, seedModel, models, seeds, seedsHistory, forceSync) => {
-  // determine which seeds to run (need to run all every time if forceSync is on)
-  const toRun = forceSync ? seeds : _.reject(seeds, (seed) => seedsHistory.includes(seed.name));
+const plantSeeds = (sequelize, seedModel, models, seeds, seedsHistory) => {
+  // determine which seeds to run
+  const toRun = _.reject(seeds, (seed) => seedsHistory.includes(seed.name));
 
   if (_.isEmpty(toRun)) {
     log(NO_SEEDS);
@@ -67,8 +73,8 @@ const plantSeeds = (sequelize, seedModel, models, seeds, seedsHistory, forceSync
 export const runSeeds = (sequelize, models, seeds, forceSync) => {
   const seedModel = sequelize.define('seed', MODEL_MAP);
 
-  return getSeedHistory(sequelize)
+  return getSeedHistory(sequelize, forceSync)
     .then((seedsHistory) => {
-      return plantSeeds(sequelize, seedModel, models, seeds, seedsHistory, forceSync);
+      return plantSeeds(sequelize, seedModel, models, seeds, seedsHistory);
     });
 };
