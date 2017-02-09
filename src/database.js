@@ -56,7 +56,7 @@ const implementation = {
     const tasks = [
       () => shouldRunMigrations ? runMigrations(sequelize, db.migrations) : Promise.resolve(),
       () => sequelize.sync({ force: forceSync }),
-      () => config.runSeeds ? runSeeds(sequelize, models, db.seeds, forceSync) : Promise.resolve(),
+      () => config.runSeeds ? runSeeds(sequelize, models, db, forceSync) : Promise.resolve(),
     ];
 
     executeSeries(tasks)

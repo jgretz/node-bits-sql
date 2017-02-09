@@ -37,14 +37,26 @@ const getSeedHistory = (sequelize, forceSync) => {
     });
 };
 
-const plantSeeds = (sequelize, seedModel, models, seeds, seedsHistory) => {
+const plantSeeds = (sequelize, seedModel, models, db, seedsHistory) => {
   // determine which seeds to run
-  const toRun = _.reject(seeds, (seed) => seedsHistory.includes(seed.name));
+  const toRun = _.reject(db.seeds, (seed) => seedsHistory.includes(seed.name));
 
   if (_.isEmpty(toRun)) {
     log(NO_SEEDS);
     return Promise.resolve();
   }
+
+  toRun.sort((a, b) => {
+    if (_.find(db.relationships, rel => rel.model === a.name && rel.references === b.name)) {
+      return 1;
+    }
+
+    if (_.find(db.relationships, rel => rel.model === b.name && rel.references === a.name)) {
+      return -1;
+    }
+
+    return 0;
+  });
 
   const tasks = toRun.map(seed => () => {
     log(`Running seed ${seed.name}`);
@@ -70,11 +82,11 @@ const plantSeeds = (sequelize, seedModel, models, seeds, seedsHistory) => {
     .then(() => { log(SEEDS_RUN); });
 };
 
-export const runSeeds = (sequelize, models, seeds, forceSync) => {
+export const runSeeds = (sequelize, models, db, forceSync) => {
   const seedModel = sequelize.define('seed', MODEL_MAP);
 
   return getSeedHistory(sequelize, forceSync)
     .then((seedsHistory) => {
-      return plantSeeds(sequelize, seedModel, models, seeds, seedsHistory);
+      return plantSeeds(sequelize, seedModel, models, db, seedsHistory);
     });
 };
