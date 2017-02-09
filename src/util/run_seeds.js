@@ -37,6 +37,31 @@ const getSeedHistory = (sequelize, forceSync) => {
     });
 };
 
+const sortByDependency = (toRun, db) => {
+  // map everything out
+  const map = {};
+  _.forEach(toRun, (seed) => {
+    map[seed.name] = seed;
+    seed.dependents = _.filter(db.relationships, rel => rel.references === seed.name);
+  });
+
+  // count logic
+  const count = (seed) => {
+    return seed.dependents.length + _.sumBy(seed.dependents, r => {
+      const dependent = map[r.model];
+      return dependent ? count(dependent) : 0;
+    });
+  };
+
+  // assign the count
+  _.forEach(toRun, (seed) => { seed.sortOffset = count(seed); });
+
+  // sort
+  return _.reverse(
+    _.sortBy(toRun, s => s.sortOffset)
+  );
+};
+
 const plantSeeds = (sequelize, seedModel, models, db, seedsHistory) => {
   // determine which seeds to run
   const toRun = _.reject(db.seeds, (seed) => seedsHistory.includes(seed.name));
@@ -46,19 +71,8 @@ const plantSeeds = (sequelize, seedModel, models, db, seedsHistory) => {
     return Promise.resolve();
   }
 
-  toRun.sort((a, b) => {
-    if (_.find(db.relationships, rel => rel.model === a.name && rel.references === b.name)) {
-      return 1;
-    }
-
-    if (_.find(db.relationships, rel => rel.model === b.name && rel.references === a.name)) {
-      return -1;
-    }
-
-    return 0;
-  });
-
-  const tasks = toRun.map(seed => () => {
+  const sorted = sortByDependency(toRun, db);
+  const tasks = sorted.map(seed => () => {
     log(`Running seed ${seed.name}`);
 
     const model = models[seed.name];
