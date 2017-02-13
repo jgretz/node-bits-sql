@@ -9,11 +9,17 @@ export const defineRelationships = (models, db) => {
     },
 
     ONE_TO_MANY: (model, reference, rel) => {
-      const options = {
+      let options = {
         foreignKey: rel.as,
         sourceKey: rel.from,
       };
       reference.hasMany(model, options);
+
+      options = {
+        foreignKey: rel.as,
+        targetKey: rel.from,
+      };
+      model.belongsTo(reference, options);
     },
 
     MANY_TO_MANY: (model, reference, rel) => {

@@ -30,6 +30,7 @@ export const flattenSchema = (db) => {
           model: subNodeKey,
           references: key,
           type: oneToMany ? ONE_TO_MANY : ONE_TO_ONE,
+          includeInSelect: true,
         });
 
         // add the table (recursive)

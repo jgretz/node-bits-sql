@@ -5,6 +5,7 @@ import { Database } from 'node-bits-internal-database';
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
   runMigrations, runSeeds,
+  buildOptions,
 } from './util';
 
 // helpers
@@ -14,6 +15,7 @@ const mapSchema = (schema) => {
 
 // configure the sequelize specific logic
 let sequelize = null;
+let database = {};
 
 const implementation = {
   // connect
@@ -61,6 +63,8 @@ const implementation = {
 
     executeSeries(tasks)
       .catch(logError);
+
+    database = { db, models };
   },
 
   defineRelationships(config, models, db) {
@@ -69,12 +73,13 @@ const implementation = {
 
   // CRUD
   findById(model, args) {
-    return model.findById(args.id)
+    return model.findById(args.id, buildOptions(model, database.db, database.models))
       .then(result => result ? result.dataValues : null);
   },
 
   find(model, args) {
-    return model.findAll({ where: args.query })
+    const options = buildOptions(model, database.db, database.models);
+    return model.findAll({ where: args.query, ...options })
       .then(result => result.map(item => item.dataValues));
   },
 
