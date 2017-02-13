@@ -5,7 +5,7 @@ import { Database } from 'node-bits-internal-database';
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
   runMigrations, runSeeds,
-  buildOptions,
+  buildOptions, READ, WRITE
 } from './util';
 
 // helpers
@@ -73,22 +73,24 @@ const implementation = {
 
   // CRUD
   findById(model, args) {
-    return model.findById(args.id, buildOptions(model, database.db, database.models))
+    return model.findById(args.id, buildOptions(READ, model, database.db, database.models))
       .then(result => result ? result.dataValues : null);
   },
 
   find(model, args) {
-    const options = buildOptions(model, database.db, database.models);
+    const options = buildOptions(READ, model, database.db, database.models);
     return model.findAll({ where: args.query, ...options })
       .then(result => result.map(item => item.dataValues));
   },
 
   create(model, args) {
-    return model.create(args.data, { returning: true });
+    const options = buildOptions(WRITE, model, database.db, database.models);
+    return model.create(args.data, { returning: true, ...options });
   },
 
   update(model, args) {
-    return model.update(args.data, { where: { id: args.id } });
+    const options = buildOptions(WRITE, model, database.db, database.models);
+    return model.update(args.data, { where: { id: args.id }, ...options });
   },
 
   delete(model, args) {
