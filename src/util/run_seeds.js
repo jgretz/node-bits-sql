@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import Sequelize from 'sequelize';
 import { log, logWarning, logError, executeSeries } from 'node-bits';
+import { resetAutoIncrement } from './reset_autoincrement';
 
 const SEEDS = 'seeds';
 const MODEL_MAP = {
@@ -82,6 +83,7 @@ const plantSeeds = (sequelize, seedModel, models, db, seedsHistory) => {
     }
 
     return model.bulkCreate(seed.seeds)
+      .then(() => resetAutoIncrement(sequelize, model))
       .then(() => seedModel.create({ name: seed.name }))
       .catch((err) => {
         log(`Seed ${seed.name} Failed:`);
