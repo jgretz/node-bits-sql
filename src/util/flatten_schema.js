@@ -14,7 +14,7 @@ const isTableDef = (value) => {
 };
 
 export const flattenSchema = (db) => {
-  const result = { schema: {}, relationships: db.relationships, indexes: db.indexes };
+  const result = { ...db, schema: {} };
 
   const flattenNode = (key, node) => {
     const nodeResult = {};
@@ -30,6 +30,8 @@ export const flattenSchema = (db) => {
           model: subNodeKey,
           references: key,
           type: oneToMany ? ONE_TO_MANY : ONE_TO_ONE,
+          includeInSelect: true,
+          includeInWrite: true,
         });
 
         // add the table (recursive)
