@@ -20,9 +20,15 @@ const SEEDS_RUN = 'Database ready ... Seeds planted.';
 
 const getSeedHistory = (sequelize, forceSync) => {
   return new Promise((resolve) => {
+    var resolveEmpty = () => resolve([]);
+    var createSeeds = () => 
+        sequelize.queryInterface.createTable(SEEDS, MODEL_MAP)
+        .then(resolveEmpty);
+
     if (forceSync) {
       sequelize.query(`DELETE from ${SEEDS}`)
-        .then(() => resolve([]));
+        .then(resolveEmpty)
+        .catch(createSeeds);
         return;
     }
 
@@ -31,10 +37,7 @@ const getSeedHistory = (sequelize, forceSync) => {
         const names = seeds[0].map(s => s.name);
         resolve(names);
       })
-      .catch(() => {
-        sequelize.queryInterface.createTable(SEEDS, MODEL_MAP)
-        .then(() => resolve([]));
-      });
+      .catch(createSeeds);
     });
 };
 
