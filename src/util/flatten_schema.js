@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { ONE_TO_ONE, ONE_TO_MANY } from 'node-bits';
+import { ONE_TO_ONE, MANY_TO_ONE } from 'node-bits';
 
 const isTableDef = (value) => {
   if (_.isFunction(value)) {
@@ -29,7 +29,7 @@ export const flattenSchema = (db) => {
         result.relationships.push({
           model: subNodeKey,
           references: key,
-          type: oneToMany ? ONE_TO_MANY : ONE_TO_ONE,
+          type: oneToMany ? MANY_TO_ONE : ONE_TO_ONE,
           includeInSelect: true,
           includeInWrite: true,
         });
