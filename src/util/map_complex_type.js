@@ -23,6 +23,9 @@ const map = {
   DATE: () => Sequelize.DATE,
 
   BOOLEAN: () => Sequelize.BOOLEAN,
+
+  TEXT: (size) =>
+    size ? Sequelize.TEXT(size) : Sequelize.TEXT,
 };
 
 const resolveType = (defType, size, precision, scale) => {
