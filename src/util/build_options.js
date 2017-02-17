@@ -41,7 +41,6 @@ const buildInclude = (mode, model, db, models, exclude) => {
 
 export const buildOptions = (mode, model, db, models) => {
   const include = buildInclude(mode, model, db, models, []);
-  console.log(include);
 
   return { include };
 };

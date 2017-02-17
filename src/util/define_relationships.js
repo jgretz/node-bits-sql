@@ -1,41 +1,50 @@
 import _ from 'lodash';
+import Sequelize from 'sequelize';
 import { logWarning } from 'node-bits';
 
-export const defineRelationships = (models, db) => {
-  const logic = {
-    ONE_TO_ONE: (model, reference, rel) => {
-      const options = { as: rel.as };
-      model.belongsTo(reference, options);
-    },
+const oneToOne = ({ model, reference, rel }) => {
+  const options = { as: rel.as };
 
-    ONE_TO_MANY: (model, reference, rel) => {
-      let options = {
-        foreignKey: rel.as,
-        sourceKey: rel.from,
-      };
-      reference.hasMany(model, options);
+  model.belongsTo(reference, options);
+  reference.hasOne(model, options);
+};
 
-      options = {
-        foreignKey: rel.as,
-        targetKey: rel.from,
-      };
-      model.belongsTo(reference, options);
-    },
+const oneToMany = ({ model, reference, rel }) => {
+  model.hasMany(reference, { foreignKey: rel.as, sourceKey: rel.from });
+  reference.belongsTo(model, { foreignKey: rel.as, targetKey: rel.from });
+};
 
-    MANY_TO_MANY: (model, reference, rel) => {
-      const options = {
-        as: rel.as,
-        through: rel.through || `${model.getTableName()}_${reference.getTableName()}`,
-      };
+const manyToMany = ({ sequelize, model, reference, rel, models }) => {
+  // define join
+  const joinName = rel.through || `${model.name}_${reference.name}`;
+  const sourceId = rel.source || `${model.name}Id`;
+  const targetId = rel.target || `${reference.name}Id`;
+  const joinModel = sequelize.define(joinName, {
+    id: { type: Sequelize.INTEGER, allowNull: false, primaryKey: true, autoIncrement: true },
+    [sourceId]: { type: Sequelize.INTEGER, allowNull: false },
+    [targetId]: { type: Sequelize.INTEGER, allowNull: false },
+  });
+  models[joinName] = joinModel;
 
-      return model.belongsToMany(reference, options);
-    },
-  };
+  // define relationships
+  model.belongsToMany(reference, { through: joinModel, foreignKey: sourceId, targetKey: targetId });
+  reference.belongsToMany(model, { through: joinModel, foreignKey: targetId, targetKey: sourceId });
+};
 
+const logicMap = {
+  ONE_TO_ONE: oneToOne,
+  ONE_TO_MANY: oneToMany,
+  MANY_TO_ONE: ({ model, reference, rel }) => {
+    oneToMany({ model: reference, reference: model, rel });
+  },
+  MANY_TO_MANY: manyToMany
+};
+
+export const defineRelationships = (sequelize, models, db) => {
   _.forEach(db.relationships, (rel) => {
     const model = models[rel.model];
     const reference = models[rel.references];
-    const apply = logic[rel.type];
+    const apply = logicMap[rel.type];
 
     if (!model || !reference || !apply) {
       logWarning(`This relationship has not been added due to a misconfiguration
@@ -43,6 +52,6 @@ export const defineRelationships = (models, db) => {
       return;
     }
 
-    logic[rel.type](model, reference, rel);
+    apply({ sequelize, model, reference, rel, db, models });
   });
 };

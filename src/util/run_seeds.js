@@ -21,7 +21,7 @@ const SEEDS_RUN = 'Database ready ... Seeds planted.';
 const getSeedHistory = (sequelize, forceSync) => {
   return new Promise((resolve) => {
     var resolveEmpty = () => resolve([]);
-    var createSeeds = () => 
+    var createSeeds = () =>
         sequelize.queryInterface.createTable(SEEDS, MODEL_MAP)
         .then(resolveEmpty);
 
