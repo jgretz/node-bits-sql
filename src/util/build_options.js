@@ -4,7 +4,7 @@ export const READ = 'READ';
 export const WRITE = 'WRITE';
 
 const buildInclude = (mode, model, db, models, exclude) => {
-  const include = db.relationships.map((rel) => {
+  const include = db.relationships.map(rel => {
     if (_.find(exclude, e => e === rel.model || e === rel.references)) {
       return null;
     }
@@ -42,5 +42,5 @@ const buildInclude = (mode, model, db, models, exclude) => {
 export const buildOptions = (mode, model, db, models) => {
   const include = buildInclude(mode, model, db, models, []);
 
-  return { include };
+  return {include};
 };
