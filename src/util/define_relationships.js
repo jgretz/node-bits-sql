@@ -1,18 +1,24 @@
 import _ from 'lodash';
 import Sequelize from 'sequelize';
 import {logWarning} from 'node-bits';
+import {foreignKeyRelationshipName, foreignKeyName} from './foreign_key_name';
 
 const oneToOne = ({model, reference, rel}) => {
-  const options = {as: rel.as};
+  const foreignKey = foreignKeyName(rel);
+  const relationshipName = foreignKeyRelationshipName(rel);
+
+  const options = {as: relationshipName, foreignKey};
 
   model.belongsTo(reference, options);
   reference.hasOne(model, options);
 };
 
 const oneToMany = ({model, reference, rel}) => {
-  const foreignKey = rel.as ? `${rel.as}Id` : undefined; // eslint-disable-line
-  model.hasMany(reference, {as: rel.as, foreignKey, sourceKey: rel.from});
-  reference.belongsTo(model, {as: rel.as, foreignKey, targetKey: rel.from});
+  const foreignKey = foreignKeyName(rel);
+  const relationshipName = foreignKeyRelationshipName(rel);
+
+  model.hasMany(reference, {as: relationshipName, foreignKey, sourceKey: rel.from});
+  reference.belongsTo(model, {as: relationshipName, foreignKey, targetKey: rel.from});
 };
 
 const manyToMany = ({sequelize, model, reference, rel, models}) => {
