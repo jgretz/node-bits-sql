@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import {foreignKeyRelationshipName} from './foreign_key_name';
 
 export const READ = 'READ';
 export const WRITE = 'WRITE';
@@ -20,6 +21,7 @@ const buildInclude = (mode, model, db, models, exclude) => {
     if (rel.model === model.name) {
       const related = models[rel.references];
       return {
+        as: foreignKeyRelationshipName(rel),
         model: related,
         include: buildInclude(mode, related, db, models, [...exclude, model.name]),
       };
@@ -28,6 +30,7 @@ const buildInclude = (mode, model, db, models, exclude) => {
     if (rel.references === model.name) {
       const related = models[rel.model];
       return {
+        as: foreignKeyRelationshipName(rel),
         model: related,
         include: buildInclude(mode, related, db, models, [...exclude, model.name]),
       };
