@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import { ONE_TO_ONE, MANY_TO_ONE } from 'node-bits';
+import {ONE_TO_ONE, MANY_TO_ONE} from 'node-bits';
 
-const isTableDef = (value) => {
+const isTableDef = value => {
   if (_.isFunction(value)) {
     return false;
   }
@@ -13,8 +13,8 @@ const isTableDef = (value) => {
   return true;
 };
 
-export const flattenSchema = (db) => {
-  const result = { ...db, schema: {} };
+export const flattenSchema = db => {
+  const result = {...db, schema: {}};
 
   const flattenNode = (key, node) => {
     const nodeResult = {};
@@ -45,7 +45,9 @@ export const flattenSchema = (db) => {
     result.schema[key] = nodeResult;
   };
 
-  _.forOwn(db.schema, (value, key) => { flattenNode(key, value); });
+  _.forOwn(db.schema, (value, key) => {
+    flattenNode(key, value);
+  });
 
   return result;
 };

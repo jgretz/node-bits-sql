@@ -1,3 +1,5 @@
+/* eslint-disable new-cap */
+/* eslint-disable no-undefined */
 import Sequelize from 'sequelize';
 
 // map to get the sequelize type definition
@@ -16,15 +18,15 @@ const map = {
 
   UUID: () => Sequelize.UUID,
 
-  STRING: (size) => size ? Sequelize.STRING(size) : Sequelize.STRING,
+  STRING: size => size ? Sequelize.STRING(size) : Sequelize.STRING,
 
-  PASSWORD: (size) => size ? Sequelize.STRING(size) : Sequelize.STRING,
+  PASSWORD: size => size ? Sequelize.STRING(size) : Sequelize.STRING,
 
   DATE: () => Sequelize.DATE,
 
   BOOLEAN: () => Sequelize.BOOLEAN,
 
-  TEXT: (size) =>
+  TEXT: size =>
     size ? Sequelize.TEXT(size) : Sequelize.TEXT,
 };
 
@@ -33,7 +35,7 @@ const resolveType = (defType, size, precision, scale) => {
   return resolve ? resolve(size, precision, scale) : undefined;
 };
 
-export const mapComplexType = (definition) => {
+export const mapComplexType = definition => {
   // break apart so we can set defaults
   const {
     type, size = null, precision = null, scale = null, primaryKey = false,
@@ -47,5 +49,5 @@ export const mapComplexType = (definition) => {
   }
 
   // return the sequelize definition
-  return { type: resolvedType, allowNull, unique, defaultValue, autoIncrement, primaryKey };
+  return {type: resolvedType, allowNull, unique, defaultValue, autoIncrement, primaryKey};
 };
