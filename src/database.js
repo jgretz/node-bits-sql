@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import {logWarning, logError, executeSeries} from 'node-bits';
 import {Database} from 'node-bits-internal-database';
+import BuildOdataQuery from './util/odata';
 
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
@@ -86,6 +87,26 @@ class Implementation {
     const options = buildOptions(READ, model, database.db, database.models);
     return model.findAll({where: args.query, ...options})
       .then(result => result.map(item => item.dataValues));
+  }
+
+  odataQuery(model, args) {
+    const options = buildOptions(READ, model, database.db, database.models);
+    const {query} = args;
+    const odata = new BuildOdataQuery(query, sequelize);
+    
+    const pageRecord = odata.buildFilter();
+    const totalRecord = odata.buildFilter({includePagination: false});
+    const output = {
+      value: [],
+    };
+    
+    return model.findAll({...pageRecord, ...options})
+      .then(results => {
+        output.value = results;
+      }).then(() => model.findAll({...totalRecord, ...options}))
+      .then(results => {
+        output['@odata.count'] = results[0].userCount;
+      }).then(() => output);
   }
 
   create(model, args) {
