@@ -93,13 +93,13 @@ class Implementation {
     const options = buildOptions(READ, model, database.db, database.models);
     const {query} = args;
     const odata = new BuildOdataQuery(query, sequelize);
-    
+
     const pageRecord = odata.buildFilter();
     const totalRecord = odata.buildFilter({includePagination: false});
     const output = {
       value: [],
     };
-    
+
     return model.findAll({...pageRecord, ...options})
       .then(results => {
         output.value = results;
