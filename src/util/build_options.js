@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import {MANY_TO_ONE, MANY_TO_MANY} from 'node-bits';
 import {foreignKeyRelationshipName} from './foreign_key_name';
 
 export const READ = 'READ';
@@ -10,29 +11,36 @@ const buildInclude = (mode, model, db, models, exclude) => {
       return null;
     }
 
-    if (mode === READ && !rel.includeInSelect) {
-      return null;
-    }
+    let currentConfig = mode === WRITE
+      ? rel.includeInWrite
+      : rel.includeInSelect;
 
-    if (mode === WRITE && !rel.includeInWrite) {
+    if (!currentConfig) {
       return null;
+    } else if (currentConfig === true) {
+      currentConfig = {
+        model: true,
+        reverse: true,
+        separate: false,
+      };
     }
-
-    if (rel.model === model.name) {
+    if (rel.model === model.name && currentConfig.model) {
       const related = models[rel.references];
       return {
         as: foreignKeyRelationshipName(rel),
         model: related,
         include: buildInclude(mode, related, db, models, [...exclude, model.name]),
+        separate: currentConfig.separate && (rel.type === MANY_TO_MANY || rel.type === MANY_TO_ONE),
       };
     }
 
-    if (rel.references === model.name) {
+    if (rel.references === model.name && currentConfig.reverse) {
       const related = models[rel.model];
       return {
         as: foreignKeyRelationshipName(rel),
         model: related,
         include: buildInclude(mode, related, db, models, [...exclude, model.name]),
+        separate: currentConfig.separate && (rel.type === MANY_TO_MANY || rel.type === MANY_TO_ONE),
       };
     }
 
