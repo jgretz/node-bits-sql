@@ -77,6 +77,38 @@ Any value returned will be used as the options forward. If you do not want this 
 #### node-bits-password
 [node-bits-password](https://github.com/jgretz/node-bits-password) implements the logic for the PASSWORD type fields and is a common hook. See the bit's documentation for more information.
 
+## Relationships
+To define a relationship, you need to define the model, the reference, and the type. By specifying relationship, the database bit will create the implied columns and foreign keys.
+
+```
+import { MANY_TO_ONE } from 'node-bits';
+
+export const order_customer = {
+  model: 'order',
+  references: 'customer',
+  type: MANY_TO_ONE,
+}
+```
+
+In addition, you can specify whether to include the related object in queries and/or updates. This is done by the following config settings:
+
+```
+{
+  includeInSelect: true, // default false
+  includeInUpdate: true, // default false
+}
+```
+
+The includeInSelect option also accepts a complex object with more specific flags to configure which direction to include the relation on:
+
+```
+{
+  model: true, // default false
+  reverse: true, // default false
+  separate: true, // default false - read about this option here: http://docs.sequelizejs.com/
+}
+```
+
 ## Methods
 
 ### connect
