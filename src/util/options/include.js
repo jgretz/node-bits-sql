@@ -1,9 +1,33 @@
 import _ from 'lodash';
 import {MANY_TO_ONE, MANY_TO_MANY} from 'node-bits';
-import {foreignKeyRelationshipName} from '../foreign_key_name';
+import {foreignKeyRelationshipName, foreignKeyName} from '../foreign_key_name';
 import {WRITE} from '../../constants';
 
-export const buildInclude = (mode, model, db, models, exclude) => {
+const isFKIncludedInSelect = (isRoot, select, rel) => {
+  if (!isRoot) {
+    return true;
+  }
+
+  if (select.length === 0) {
+    return true;
+  }
+
+  return select.includes(foreignKeyName(rel));
+};
+
+const isRelationshipIncludedInSelect = (isRoot, select, rel) => {
+  if (!isRoot) {
+    return true;
+  }
+
+  if (select.length === 0) {
+    return true;
+  }
+
+  return select.includes(rel.model);
+};
+
+export const buildInclude = (mode, model, db, models, exclude, select) => {
   const include = db.relationships.map(rel => {
     if (_.find(exclude, e => e === rel.model || e === rel.references)) {
       return null;
@@ -23,7 +47,13 @@ export const buildInclude = (mode, model, db, models, exclude) => {
       };
     }
 
+    const isRoot = exclude.length === 0;
+
     if (rel.model === model.name && currentConfig.model) {
+      if (!isFKIncludedInSelect(isRoot, select, rel)) {
+        return null;
+      }
+
       const related = models[rel.references];
       return {
         as: foreignKeyRelationshipName(rel),
@@ -34,6 +64,10 @@ export const buildInclude = (mode, model, db, models, exclude) => {
     }
 
     if (rel.references === model.name && currentConfig.reverse) {
+      if (!isRelationshipIncludedInSelect(isRoot, select, rel)) {
+        return null;
+      }
+
       const related = models[rel.model];
       return {
         as: foreignKeyRelationshipName(rel),

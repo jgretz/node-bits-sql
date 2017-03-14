@@ -87,9 +87,6 @@ class Implementation {
   find(model, args) {
     const options = buildOptions(READ, model, database.db, database.models, args);
 
-    console.log('OPTIONS:');
-    console.log(options);
-
     return model.findAll(options)
       .then(result => result.map(item => item.dataValues));
   }
