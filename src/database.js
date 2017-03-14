@@ -5,8 +5,10 @@ import {Database} from 'node-bits-internal-database';
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
   runMigrations, runSeeds,
-  buildOptions, READ, WRITE,
+  buildOptions,
 } from './util';
+
+import {READ, WRITE} from './constants';
 
 // helpers
 const mapSchema = schema => _.mapValues(schema, value => mapComplexType(value));
@@ -83,8 +85,12 @@ class Implementation {
   }
 
   find(model, args) {
-    const options = buildOptions(READ, model, database.db, database.models);
-    return model.findAll({where: args.query, ...options})
+    const options = buildOptions(READ, model, database.db, database.models, args);
+
+    console.log('OPTIONS:');
+    console.log(options);
+
+    return model.findAll(options)
       .then(result => result.map(item => item.dataValues));
   }
 
