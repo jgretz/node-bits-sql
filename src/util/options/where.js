@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import _ from 'lodash';
 
 const operatorMap = {
@@ -19,6 +20,8 @@ const literalMap = {
   like: node => `%${node}%`,
   startsWith: node => `${node}%`,
   endsWith: node => `%${node}`,
+  and: node => mapNode(_.values(node)),
+  or: node => mapNode(_.values(node)),
 };
 
 const mapKey = key => {
@@ -27,6 +30,10 @@ const mapKey = key => {
 };
 
 const mapNode = node => {
+  if (_.isArray(node)) {
+    return node.map(inner => mapNode(inner));
+  }
+
   if (_.isObject(node)) {
     return _.reduce(node, (result, value, key) => {
       const mappedKey = mapKey(key);
@@ -39,10 +46,6 @@ const mapNode = node => {
 
       return {...result, [mappedKey]: mappedValue};
     }, {});
-  }
-
-  if (_.isArray(node)) {
-    return node.map(inner => mapNode(inner));
   }
 
   return node;
