@@ -16,6 +16,13 @@ import {READ, WRITE} from './constants';
 // helpers
 const mapSchema = schema => _.mapValues(schema, value => mapComplexType(value));
 
+const findOld = (database, model, args) => {
+  const options = buildOptions(READ, model, database.db, database.models);
+  const ops = {...options, where: args.backwardsQuery};
+
+  return model.findAll(ops).then(result => result.map(item => item.dataValues));
+};
+
 // configure the sequelize specific logic
 let sequelize = null;
 let database = {};
@@ -88,6 +95,11 @@ class Implementation {
   }
 
   find(model, args) {
+    // support backwards compatibility for now
+    if (args.backwardsQuery) {
+      return findOld(database, model, args);
+    }
+
     // build the options
     const options = buildOptions(READ, model, database.db, database.models, args);
 
@@ -138,7 +150,7 @@ class Implementation {
 
   update(model, args) {
     const options = buildOptions(WRITE, model, database.db, database.models);
-    return model.update(args.data, {where: {id: args.id}, ...options});
+    return model.update(args.data, {...options, where: {id: args.id}});
   }
 
   delete(model, args) {
