@@ -147,8 +147,8 @@ All options are not required and can be used in any combination.
 
 * select: an array of field names to include in the results
 * orderby: an array of objects that define the order of the result. The format of is item is as follows: ```{field: '', direction: ''}```.
-* start: the index of the result set to start from
-* max: the number of records to return in the results
+* start: the index of the result set to start from (alternatively parameter can be named skip)
+* max: the number of records to return in the results (alternatively parameter can be named limit)
 * where: a complex object that contains the
 * includeMetaData: an array of options to return wrapped around the result set. If supplied the format of the result will be ```value:[rows], ...{keys as supplied}```
 
