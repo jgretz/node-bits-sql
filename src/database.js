@@ -1,5 +1,8 @@
 import _ from 'lodash';
-import {logWarning, logError, executeSeries} from 'node-bits';
+import {
+  logWarning, logError, executeSeries,
+  COUNT, START, MAX,
+} from 'node-bits';
 import {Database} from 'node-bits-internal-database';
 
 import {
@@ -85,10 +88,47 @@ class Implementation {
   }
 
   find(model, args) {
+    // build the options
     const options = buildOptions(READ, model, database.db, database.models, args);
 
-    return model.findAll(options)
-      .then(result => result.map(item => item.dataValues));
+    // helper functions for repeated code
+    const mapMeta = {
+      [COUNT]: meta => meta.count,
+      [START]: () => options.start,
+      [MAX]: () => options.max,
+    };
+
+    const findAll = () => model.findAll(options).then(result => result.map(item => item.dataValues));
+    const wrap = (value, meta) => {
+      const result = {value};
+
+      _.forEach(args.includeMetaData, item => {
+        const map = mapMeta[item.value];
+        if (map) {
+          result[item.key] = map(meta);
+        }
+      });
+
+      return result;
+    };
+
+    // simple
+    if (!args.includeMetaData) {
+      return findAll();
+    }
+
+    // non-count meta data
+    const shouldCount = args.includeMetaData && _.some(args.includeMetaData, x => x.value === COUNT);
+    if (!shouldCount) {
+      return findAll().then(wrap);
+    }
+
+    // get the count then return
+    // we can't use findAndCount because it counts all the included models as well
+    return model.count(options.where)
+    .then(count =>
+      findAll().then(value => wrap(value, {count}))
+    );
   }
 
   create(model, args) {
