@@ -1967,24 +1967,25 @@ nested-error-stacks@^1.0.0:
   dependencies:
     inherits "~2.0.1"
 
-node-bits-internal-database@^0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/node-bits-internal-database/-/node-bits-internal-database-0.0.4.tgz#8c9368057288934d8cbad02097fa56e3bca0832c"
+node-bits-internal-database@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/node-bits-internal-database/-/node-bits-internal-database-0.0.9.tgz#fed182794ed2f882785120fb49558abf4964a500"
   dependencies:
     class-autobind "^0.1.4"
     lodash "^4.17.4"
-    node-bits "^0.0.14"
+    node-bits "^0.0.20"
 
-node-bits@^0.0.14:
-  version "0.0.14"
-  resolved "https://registry.yarnpkg.com/node-bits/-/node-bits-0.0.14.tgz#7b86ec58726f7be6c1253a4830d4abd1961f613c"
+node-bits@^0.0.20:
+  version "0.0.20"
+  resolved "https://registry.yarnpkg.com/node-bits/-/node-bits-0.0.20.tgz#b3eb38687ec497c61263b2e5036c3a089770d5a8"
   dependencies:
     chalk "^1.1.3"
     lodash "^4.17.4"
+    timer-machine-node "^1.1.2"
 
-node-bits@^0.0.17:
-  version "0.0.17"
-  resolved "https://registry.yarnpkg.com/node-bits/-/node-bits-0.0.17.tgz#5b10abacabab4b52664bcd68cb4c3c3744302a80"
+node-bits@^0.0.21:
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/node-bits/-/node-bits-0.0.21.tgz#b71dff79a2510578c9821fe0d79f7bf2441703a6"
   dependencies:
     chalk "^1.1.3"
     lodash "^4.17.4"
