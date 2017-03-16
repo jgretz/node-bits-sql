@@ -20,6 +20,8 @@ const literalMap = {
   like: node => `%${node}%`,
   startsWith: node => `${node}%`,
   endsWith: node => `%${node}`,
+  and: node => mapNode(_.values(node)),
+  or: node => mapNode(_.values(node)),
 };
 
 const mapKey = key => {
