@@ -135,8 +135,6 @@ class Implementation {
       return findAll().then(wrap);
     }
 
-    console.log(options.where);
-
     // get the count then return
     // we can't use findAndCount because it counts all the included models as well
     return model.count({where: options.where})
