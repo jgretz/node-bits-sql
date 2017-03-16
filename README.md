@@ -77,6 +77,38 @@ Any value returned will be used as the options forward. If you do not want this 
 #### node-bits-password
 [node-bits-password](https://github.com/jgretz/node-bits-password) implements the logic for the PASSWORD type fields and is a common hook. See the bit's documentation for more information.
 
+## Relationships
+To define a relationship, you need to define the model, the reference, and the type. By specifying relationship, the database bit will create the implied columns and foreign keys.
+
+```
+import { MANY_TO_ONE } from 'node-bits';
+
+export const order_customer = {
+  model: 'order',
+  references: 'customer',
+  type: MANY_TO_ONE,
+}
+```
+
+In addition, you can specify whether to include the related object in queries and/or updates. This is done by the following config settings:
+
+```
+{
+  includeInSelect: true, // default false
+  includeInUpdate: true, // default false
+}
+```
+
+The includeInSelect option also accepts a complex object with more specific flags to configure which direction to include the relation on:
+
+```
+{
+  model: true, // default false
+  reverse: true, // default false
+  separate: true, // default false - read about this option here: http://docs.sequelizejs.com/
+}
+```
+
 ## Methods
 
 ### connect
@@ -103,12 +135,45 @@ Will return an object if found, if not will return null.
 
 ### find
 ```
-find(name, query)
+find(name, options)
 ```
 
-The name of the model, the id to search for.
+The name of the model, the options to use for searching.
 
-Will return an object if found, if not will return null.
+Will return the results for the options supplied, null is supplied, it will return all records for the model
+
+#### Options
+All options are not required and can be used in any combination.
+
+* select: an array of field names to include in the results
+* orderby: an array of objects that define the order of the result. The format of is item is as follows: ```{field: '', direction: ''}```.
+* start: the index of the result set to start from (alternatively parameter can be named skip)
+* max: the number of records to return in the results (alternatively parameter can be named limit)
+* where: a complex object that contains the
+* includeMetaData: an array of options to return wrapped around the result set. If supplied the format of the result will be ```value:[rows], ...{keys as supplied}```
+
+##### Where
+The where clause is specified as a complex object made up of key, value pairs. Many times the values for a key are a complex object themselves, representing the operations and values.
+
+node-bits-sql supports the following operators: eq, ne, gt, ge, lt, le, like, startsWith, endsWith, and, or.
+
+Example (all orders with a total greater than or equal to $5.00):
+```
+database.find('order', {
+  where: {
+    total: { ge: 5 },
+  },
+};
+```
+
+##### Include Meta Data
+The following options are understood for metadata, and the constants can be found in node-bits.
+
+* COUNT
+* START
+* MAX
+
+To allow for different return keys, the format of each item in the array is as follows: ```{key: '', value: ''}```
 
 ### create
 ```
