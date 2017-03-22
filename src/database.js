@@ -1,15 +1,27 @@
 import _ from 'lodash';
-import {logWarning, logError, executeSeries} from 'node-bits';
+import {
+  logWarning, logError, executeSeries,
+  COUNT, START, MAX,
+} from 'node-bits';
 import {Database} from 'node-bits-internal-database';
 
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
   runMigrations, runSeeds,
-  buildOptions, READ, WRITE,
+  buildOptions,
 } from './util';
+
+import {READ, WRITE} from './constants';
 
 // helpers
 const mapSchema = schema => _.mapValues(schema, value => mapComplexType(value));
+
+const findOld = (database, model, args) => {
+  const options = buildOptions(READ, model, database.db, database.models);
+  const ops = {...options, where: args.backwardsQuery};
+
+  return model.findAll(ops).then(result => result.map(item => item.dataValues));
+};
 
 // configure the sequelize specific logic
 let sequelize = null;
@@ -83,9 +95,50 @@ class Implementation {
   }
 
   find(model, args) {
-    const options = buildOptions(READ, model, database.db, database.models);
-    return model.findAll({where: args.query, ...options})
-      .then(result => result.map(item => item.dataValues));
+    // support backwards compatibility for now
+    if (args.backwardsQuery) {
+      return findOld(database, model, args);
+    }
+
+    // build the options
+    const options = buildOptions(READ, model, database.db, database.models, args);
+
+    // helper functions for repeated code
+    const mapMeta = {
+      [COUNT]: meta => meta.count,
+      [START]: () => options.start,
+      [MAX]: () => options.max,
+    };
+
+    const findAll = () => model.findAll(options).then(result => result.map(item => item.dataValues));
+    const wrap = (value, meta) => {
+      const result = {value};
+
+      _.forEach(args.includeMetaData, item => {
+        const map = mapMeta[item.value];
+        if (map) {
+          result[item.key] = map(meta);
+        }
+      });
+
+      return result;
+    };
+
+    // simple
+    if (!args.includeMetaData) {
+      return findAll();
+    }
+
+    // non-count meta data
+    const shouldCount = args.includeMetaData && _.some(args.includeMetaData, x => x.value === COUNT);
+    if (!shouldCount) {
+      return findAll().then(wrap);
+    }
+
+    // get the count then return
+    // we can't use findAndCount because it counts all the included models as well
+    return model.count({where: options.where})
+    .then(count => findAll().then(value => wrap(value, {count})));
   }
 
   create(model, args) {
@@ -95,7 +148,7 @@ class Implementation {
 
   update(model, args) {
     const options = buildOptions(WRITE, model, database.db, database.models);
-    return model.update(args.data, {where: {id: args.id}, ...options});
+    return model.update(args.data, {...options, where: {id: args.id}});
   }
 
   delete(model, args) {
