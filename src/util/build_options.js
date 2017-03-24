@@ -9,9 +9,7 @@ export const buildOptions = (mode, model, database, args = {}) => {
   const order = buildOrderby(args, models, relationships);
   const attributes = buildSelect(args, model);
 
-  const options = {include, where, order, ...page, attributes};
-  console.log(options);
-  return options;
+  return {include, where, order, ...page, attributes};
 };
 
 export const buildOptionsForCount = (mode, model, database, args = {}) => {
