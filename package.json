@@ -22,6 +22,7 @@
     "lodash": "^4.17.4",
     "node-bits": "^0.0.21",
     "node-bits-internal-database": "^0.0.9",
+    "pluralize": "^4.0.0",
     "semver": "^5.3.0",
     "sequelize": "^3.30.2"
   },

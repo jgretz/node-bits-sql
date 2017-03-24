@@ -1,84 +1,215 @@
+/* eslint-disable no-undefined */
 import _ from 'lodash';
 import {MANY_TO_ONE, MANY_TO_MANY} from 'node-bits';
-import {foreignKeyRelationshipName, foreignKeyName} from '../foreign_key_name';
-import {WRITE} from '../../constants';
+import {foreignKeyRelationshipName} from '../foreign_key_name';
+import {READ} from '../../constants';
 
-const isFKIncludedInSelect = (isRoot, select, rel) => {
-  if (!isRoot) {
-    return true;
+// boolean functions to define if the relationship makes it in
+const searchTeamForRelationship = (model, relationship) => {
+  if (relationship.model === model.name && relationship.as) {
+    return relationship.as.replace('Id', '');
   }
 
-  if (select.length === 0) {
-    return true;
+  if (relationship.references === model.name) {
+    return relationship.model;
   }
 
-  return select.includes(foreignKeyName(rel));
+  return relationship.references;
 };
 
-const isRelationshipIncludedInSelect = (isRoot, select, rel) => {
-  if (!isRoot) {
-    return true;
+const notNull = array => _.filter(array, c => !_.isNil(c));
+
+const keysFromNode = node => {
+  if (_.isArray(node)) {
+    return notNull(node.map(c => keysFromNode(c)));
   }
 
-  if (select.length === 0) {
-    return true;
-  }
-
-  return select.includes(rel.model);
-};
-
-export const buildInclude = (mode, model, db, models, exclude, select) => {
-  const include = db.relationships.map(rel => {
-    if (_.find(exclude, e => e === rel.model || e === rel.references)) {
-      return null;
-    }
-
-    let currentConfig = mode === WRITE
-      ? rel.includeInWrite
-      : rel.includeInSelect;
-
-    if (!currentConfig) {
-      return null;
-    } else if (currentConfig === true) {
-      currentConfig = {
-        model: true,
-        reverse: true,
-        separate: false,
-      };
-    }
-
-    const isRoot = exclude.length === 0;
-
-    if (rel.model === model.name && currentConfig.model) {
-      if (!isFKIncludedInSelect(isRoot, select, rel)) {
-        return null;
-      }
-
-      const related = models[rel.references];
-      return {
-        as: foreignKeyRelationshipName(rel),
-        model: related,
-        include: buildInclude(mode, related, db, models, [...exclude, model.name]),
-        separate: currentConfig.separate && (rel.type === MANY_TO_MANY || rel.type === MANY_TO_ONE),
-      };
-    }
-
-    if (rel.references === model.name && currentConfig.reverse) {
-      if (!isRelationshipIncludedInSelect(isRoot, select, rel)) {
-        return null;
-      }
-
-      const related = models[rel.model];
-      return {
-        as: foreignKeyRelationshipName(rel),
-        model: related,
-        include: buildInclude(mode, related, db, models, [...exclude, model.name]),
-        separate: currentConfig.separate && (rel.type === MANY_TO_MANY || rel.type === MANY_TO_ONE),
-      };
-    }
-
+  if (_.isString(node)) {
     return null;
+  }
+
+  if (_.isObject(node)) {
+    const own = _.keys(node);
+    const child = notNull(own.map(c => keysFromNode(node[c])));
+
+    return _.flatMap([...own, ...child]);
+  }
+
+  return null;
+};
+
+const shouldIncludeBySchemaDefinition = (model, relationship, params) => {
+  let config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
+  if (config === undefined) {
+    return false;
+  }
+
+  // include both by default
+  if (config === true) {
+    config = {model: true, reverse: true};
+  }
+
+  // include per config
+  if (relationship.model === model.name) {
+    return config.model;
+  }
+
+  if (relationship.references === model.name) {
+    return config.reverse;
+  }
+
+  return false;
+};
+
+const shouldIncludeBySelect = (model, relationship, params) => {
+  // nothing specified, so don't imply either way
+  const select = params.args.select;
+  if (select === undefined) {
+    return undefined;
+  }
+
+  const searchTerm = searchTeamForRelationship(model, relationship);
+  return _.some(select, item => item.split('.').includes(searchTerm));
+};
+
+const shouldIncludeByOrderBy = (model, relationship, params) => {
+  const orderby = params.args.orderby;
+  if (orderby === undefined) {
+    return undefined;
+  }
+
+  const searchTerm = searchTeamForRelationship(model, relationship);
+  const neededForOrderBy = _.some(orderby, item => item.field.split('.').includes(searchTerm));
+
+  return neededForOrderBy || undefined;
+};
+
+const shouldIncludeByWhere = (model, relationship, params) => {
+  const where = params.args.where;
+  if (where === undefined) {
+    return undefined;
+  }
+
+  const searchTerm = searchTeamForRelationship(model, relationship);
+  const keys = keysFromNode(where);
+  const neededForWhere = _.some(keys, item => item.split('.').includes(searchTerm));
+
+  return neededForWhere || undefined;
+};
+
+const compileCheckList = params => {
+  const checklist = [];
+  if (!params.constraints || params.constraints.select) {
+    checklist.push(shouldIncludeBySelect);
+  }
+
+  if (!params.constraints || params.constraints.orderby) {
+    checklist.push(shouldIncludeByOrderBy);
+  }
+
+  if (!params.constraints || params.constraints.where) {
+    checklist.push(shouldIncludeByWhere);
+  }
+
+  return checklist;
+};
+
+const shouldIncludeRelationship = (model, relationship, params) => {
+  // If some part of our query requires the relationship, it trumps the schema definition
+  const checks = compileCheckList(params);
+
+  const results = checks.map(check => check(model, relationship, params));
+  const includeByQuery = _.some(results, result => result === true);
+  const excludeByQuery = _.some(results, result => result === false);
+
+  if (includeByQuery) {
+    return true;
+  }
+
+  if (excludeByQuery) {
+    return false;
+  }
+
+  // follow constraints
+  if (params.constraints && !params.constraints.schema) {
+    return false;
+  }
+
+  // not defined by the query, follow the schema definition
+  return shouldIncludeBySchemaDefinition(model, relationship, params);
+};
+
+// functions to create the include object per sequelizejs syntax
+const findRelatedModel = (model, relationship, params) => {
+  if (relationship.model === model.name) {
+    return params.models[relationship.references];
+  }
+
+  return params.models[relationship.model];
+};
+
+const defineSeparate = (relationship, params) => {
+  const config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
+  if (!config) {
+    return false;
+  }
+
+  if (!_.isObject(config)) {
+    return false;
+  }
+
+  return config.separate && (relationship.type === MANY_TO_MANY || relationship.type === MANY_TO_ONE);
+};
+
+const defineAttributes = (related, relationship, params) => {
+  if (!params.args.select) {
+    return undefined;
+  }
+
+  const attributes = [];
+  _.forEach(params.args.select, item => {
+    const pieces = item.split('.');
+    if (pieces.length < 2) {
+      return;
+    }
+
+    const term = relationship.as ? relationship.as.replace('Id', '') : related.name;
+
+    if (pieces[pieces.length - 2] === term) {
+      attributes.push(pieces[pieces.length - 1]);
+    }
   });
 
-  return _.filter(include, m => !_.isNil(m));
+  return attributes.length === 0 ? undefined : attributes;
 };
+
+const defineInclude = (model, relationship, params, path) => {
+  // find the model
+  const related = findRelatedModel(model, relationship, params);
+
+  // stop the recursion from going back up the tree
+  if (path.includes(related.name)) {
+    return null;
+  }
+
+  // build include object
+  return {
+    as: foreignKeyRelationshipName(relationship),
+    model: related,
+    include: build(related, params, [...path, model.name]), // eslint-disable-line
+    separate: defineSeparate(relationship, params),
+    attributes: defineAttributes(related, relationship, params),
+  };
+};
+
+// entry point for recursion so we can go down the rabbit hole
+const build = (model, params, path = []) => {
+  const appliedRelationships = _.filter(params.relationships,
+    relationship => shouldIncludeRelationship(model, relationship, params));
+
+  return appliedRelationships.map(relationship => defineInclude(model, relationship, params, path));
+};
+
+// public interface
+export const buildInclude = (args, mode, model, models, relationships, constraints) =>
+  build(model, {mode, models, relationships, args, constraints});

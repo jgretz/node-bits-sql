@@ -26,7 +26,15 @@ const literalMap = {
 
 const mapKey = key => {
   const operator = operatorMap[key];
-  return operator || key;
+  if (operator) {
+    return operator;
+  }
+
+  if (key.includes('.')) {
+    return `$${key}$`;
+  }
+
+  return key;
 };
 
 const mapNode = node => {

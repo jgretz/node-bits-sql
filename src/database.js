@@ -8,7 +8,7 @@ import {Database} from 'node-bits-internal-database';
 import {
   flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
   runMigrations, runSeeds,
-  buildOptions,
+  buildOptions, buildOptionsForCount,
 } from './util';
 
 import {READ, WRITE} from './constants';
@@ -101,7 +101,7 @@ class Implementation {
     }
 
     // build the options
-    const options = buildOptions(READ, model, database.db, database.models, args);
+    const options = buildOptions(READ, model, database, args);
 
     // helper functions for repeated code
     const mapMeta = {
@@ -137,7 +137,8 @@ class Implementation {
 
     // get the count then return
     // we can't use findAndCount because it counts all the included models as well
-    return model.count({where: options.where})
+    const countOptions = buildOptionsForCount(READ, model, database, args);
+    return model.count(countOptions)
     .then(count => findAll().then(value => wrap(value, {count})));
   }
 
