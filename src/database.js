@@ -17,7 +17,7 @@ import {READ, WRITE} from './constants';
 const mapSchema = schema => _.mapValues(schema, value => mapComplexType(value));
 
 const findOld = (database, model, args) => {
-  const options = buildOptions(READ, model, database.db, database.models);
+  const options = buildOptions(READ, model, database);
   const ops = {...options, where: args.backwardsQuery};
 
   return model.findAll(ops).then(result => result.map(item => item.dataValues));
