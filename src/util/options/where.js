@@ -60,7 +60,7 @@ const mapNode = node => {
 };
 
 export const buildWhere = args => {
-  if (!args.where) {
+  if (!args.where || _.keys(args.where).length === 0) {
     return undefined; // eslint-disable-line
   }
 

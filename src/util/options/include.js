@@ -1,6 +1,8 @@
 /* eslint-disable no-undefined */
+/* eslint-disable no-use-before-define */
 import _ from 'lodash';
 import {MANY_TO_ONE, MANY_TO_MANY} from 'node-bits';
+import pluralize from 'pluralize';
 import {foreignKeyRelationshipName} from '../foreign_key_name';
 import {READ} from '../../constants';
 
@@ -38,6 +40,44 @@ const keysFromNode = node => {
   return null;
 };
 
+
+const relationshipApplies = (model, relationship, piece, split) => {
+  const searchTerm = searchTeamForRelationship(model, relationship);
+  return _.some(piece, item => {
+    const parts = split(item);
+    if (parts.includes(searchTerm)) {
+      return true;
+    }
+
+    if (parts.includes(pluralize(searchTerm))) {
+      return true;
+    }
+
+    if (parts.includes(pluralize.singular(searchTerm))) {
+      return true;
+    }
+
+    return false;
+  });
+};
+
+const compileCheckList = params => {
+  const checklist = [];
+  if (!params.constraints || params.constraints.select) {
+    checklist.push(shouldIncludeBySelect);
+  }
+
+  if (!params.constraints || params.constraints.orderby) {
+    checklist.push(shouldIncludeByOrderBy);
+  }
+
+  if (!params.constraints || params.constraints.where) {
+    checklist.push(shouldIncludeByWhere);
+  }
+
+  return checklist;
+};
+
 const shouldIncludeBySchemaDefinition = (model, relationship, params) => {
   let config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
   if (config === undefined) {
@@ -68,8 +108,7 @@ const shouldIncludeBySelect = (model, relationship, params) => {
     return undefined;
   }
 
-  const searchTerm = searchTeamForRelationship(model, relationship);
-  return _.some(select, item => item.split('.').includes(searchTerm));
+  return relationshipApplies(model, relationship, select, item => item.split('.'));
 };
 
 const shouldIncludeByOrderBy = (model, relationship, params) => {
@@ -78,8 +117,8 @@ const shouldIncludeByOrderBy = (model, relationship, params) => {
     return undefined;
   }
 
-  const searchTerm = searchTeamForRelationship(model, relationship);
-  const neededForOrderBy = _.some(orderby, item => item.field.split('.').includes(searchTerm));
+  const neededForOrderBy =
+    relationshipApplies(model, relationship, orderby, item => item.field.split('.'));
 
   return neededForOrderBy || undefined;
 };
@@ -90,31 +129,19 @@ const shouldIncludeByWhere = (model, relationship, params) => {
     return undefined;
   }
 
-  const searchTerm = searchTeamForRelationship(model, relationship);
   const keys = keysFromNode(where);
-  const neededForWhere = _.some(keys, item => item.split('.').includes(searchTerm));
+  const neededForWhere =
+    relationshipApplies(model, relationship, keys, item => item.split('.'));
 
   return neededForWhere || undefined;
 };
 
-const compileCheckList = params => {
-  const checklist = [];
-  if (!params.constraints || params.constraints.select) {
-    checklist.push(shouldIncludeBySelect);
-  }
-
-  if (!params.constraints || params.constraints.orderby) {
-    checklist.push(shouldIncludeByOrderBy);
-  }
-
-  if (!params.constraints || params.constraints.where) {
-    checklist.push(shouldIncludeByWhere);
-  }
-
-  return checklist;
-};
-
 const shouldIncludeRelationship = (model, relationship, params) => {
+  // see if this applies at all to the passed in model (if not it could be brought in elsewhere)
+  if (relationship.model !== model.name && relationship.references !== model.name) {
+    return false;
+  }
+
   // If some part of our query requires the relationship, it trumps the schema definition
   const checks = compileCheckList(params);
 
@@ -207,7 +234,11 @@ const build = (model, params, path = []) => {
   const appliedRelationships = _.filter(params.relationships,
     relationship => shouldIncludeRelationship(model, relationship, params));
 
-  return appliedRelationships.map(relationship => defineInclude(model, relationship, params, path));
+  const includes = appliedRelationships.map(
+    relationship => defineInclude(model, relationship, params, path)
+  );
+
+  return _.filter(includes, x => !_.isNil(x));
 };
 
 // public interface

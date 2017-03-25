@@ -17,7 +17,7 @@ import {READ, WRITE} from './constants';
 const mapSchema = schema => _.mapValues(schema, value => mapComplexType(value));
 
 const findOld = (database, model, args) => {
-  const options = buildOptions(READ, model, database);
+  const options = buildOptions(READ, model, database, args);
   const ops = {...options, where: args.backwardsQuery};
 
   return model.findAll(ops).then(result => result.map(item => item.dataValues));
@@ -90,7 +90,7 @@ class Implementation {
 
   // CRUD
   findById(model, args) {
-    return model.findById(args.id, buildOptions(READ, model, database.db, database.models))
+    return model.findById(args.id, buildOptions(READ, model, database, args))
       .then(result => result ? result.dataValues : null);
   }
 
@@ -143,12 +143,12 @@ class Implementation {
   }
 
   create(model, args) {
-    const options = buildOptions(WRITE, model, database.db, database.models);
+    const options = buildOptions(WRITE, model, database, args);
     return model.create(args.data, {returning: true, ...options});
   }
 
   update(model, args) {
-    const options = buildOptions(WRITE, model, database.db, database.models);
+    const options = buildOptions(WRITE, model, database, args);
     return model.update(args.data, {...options, where: {id: args.id}});
   }
 
