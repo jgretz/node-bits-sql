@@ -23,7 +23,7 @@ const notNull = array => _.filter(array, c => !_.isNil(c));
 
 const keysFromNode = node => {
   if (_.isArray(node)) {
-    return notNull(node.map(c => keysFromNode(c)));
+    return _.flatMap(notNull(node.map(c => keysFromNode(c))));
   }
 
   if (_.isString(node)) {
