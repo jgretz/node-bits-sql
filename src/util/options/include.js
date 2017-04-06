@@ -75,6 +75,10 @@ const compileCheckList = params => {
     checklist.push(shouldIncludeByWhere);
   }
 
+  if (!params.constraints || params.constraints.expand) {
+    checklist.push(shouldIncludeByExpand);
+  }
+
   return checklist;
 };
 
@@ -109,6 +113,16 @@ const shouldIncludeBySelect = (model, relationship, params) => {
   }
 
   return relationshipApplies(model, relationship, select, item => item.split('.'));
+};
+
+const shouldIncludeByExpand = (model, relationship, params) => {
+  // nothing specified, so don't imply either way
+  const expand = params.args.expand;
+  if (expand === undefined) {
+    return undefined;
+  }
+
+  return relationshipApplies(model, relationship, expand , item => item.split('.'));
 };
 
 const shouldIncludeByOrderBy = (model, relationship, params) => {
@@ -231,6 +245,10 @@ const defineInclude = (model, relationship, params, path) => {
 
 // entry point for recursion so we can go down the rabbit hole
 const build = (model, params, path = []) => {
+
+
+  console.log(params);
+
   const appliedRelationships = _.filter(params.relationships,
     relationship => shouldIncludeRelationship(model, relationship, params));
 
