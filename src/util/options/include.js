@@ -177,18 +177,19 @@ const defineAttributes = (related, relationship, params) => {
   const attributes = [];
   _.forEach(params.args.select, item => {
     const pieces = item.split('.');
+
     if (pieces.length < 2) {
       return;
     }
 
     const term = relationship.as ? relationship.as.replace('Id', '') : related.name;
 
-    if (pieces[pieces.length - 2] === term) {
+    if (pieces[pieces.length - 2] === pluralize(term) || pieces[pieces.length-2] === pluralize.singular(term)) {
       attributes.push(pieces[pieces.length - 1]);
     }
   });
 
-  return attributes.length === 0 ? undefined : attributes;
+  return attributes.length === 0 || attributes.includes('*') ? undefined : attributes;
 };
 
 const defineInclude = (model, relationship, params, path) => {

@@ -110,8 +110,6 @@ class Implementation {
       [MAX]: () => options.max,
     };
 
-    console.log(options);
-
     const findAll = () => model.findAll(options).then(result => result.map(item => item.dataValues));
     const wrap = (value, meta) => {
       const result = {value};
