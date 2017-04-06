@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 export const buildSelect = (args, model) => {
-  if (!args.select) {
+  if (!args.select || args.select.includes('*')) {
     return undefined; // eslint-disable-line
   }
 
