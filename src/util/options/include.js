@@ -63,20 +63,20 @@ const relationshipApplies = (model, relationship, piece, split) => {
 
 const compileCheckList = params => {
   const checklist = [];
-  if (!params.constraints || params.constraints.select) {
-    checklist.push(shouldIncludeBySelect);
+  if (params.args.select) {
+    checklist.push(buildShouldInclude(params.args.select, {overrideDefault: true}));
   }
 
-  if (!params.constraints || params.constraints.orderby) {
-    checklist.push(shouldIncludeByOrderBy);
+  if (params.args.expand) {
+    checklist.push(buildShouldInclude(params.args.expand, {overrideDefault: true}));
   }
 
-  if (!params.constraints || params.constraints.where) {
-    checklist.push(shouldIncludeByWhere);
+  if (params.args.orderby) {
+    checklist.push(buildShouldInclude(params.args.orderby.map(o => o.field)));
   }
 
-  if (!params.constraints || params.constraints.expand) {
-    checklist.push(shouldIncludeByExpand);
+  if (params.args.where) {
+    checklist.push(buildShouldInclude(keysFromNode(params.args.where)));
   }
 
   return checklist;
@@ -105,50 +105,17 @@ const shouldIncludeBySchemaDefinition = (model, relationship, params) => {
   return false;
 };
 
-const shouldIncludeBySelect = (model, relationship, params) => {
-  // nothing specified, so don't imply either way
-  const select = params.args.select;
-  if (select === undefined) {
-    return undefined;
+const buildShouldInclude = (models, overrideDefault) => {
+  return (model, relationship) => {
+    // nothing specified, so don't imply either way
+    if (models === undefined) {
+      return undefined;
+    }
+
+    const includesRelationship = relationshipApplies(model, relationship, models, item => item.split('.'));
+    return overrideDefault ? (includesRelationship || undefined) : includesRelationship;
   }
-
-  return relationshipApplies(model, relationship, select, item => item.split('.'));
-};
-
-const shouldIncludeByExpand = (model, relationship, params) => {
-  // nothing specified, so don't imply either way
-  const expand = params.args.expand;
-  if (expand === undefined) {
-    return undefined;
-  }
-
-  return relationshipApplies(model, relationship, expand , item => item.split('.'));
-};
-
-const shouldIncludeByOrderBy = (model, relationship, params) => {
-  const orderby = params.args.orderby;
-  if (orderby === undefined) {
-    return undefined;
-  }
-
-  const neededForOrderBy =
-    relationshipApplies(model, relationship, orderby, item => item.field.split('.'));
-
-  return neededForOrderBy || undefined;
-};
-
-const shouldIncludeByWhere = (model, relationship, params) => {
-  const where = params.args.where;
-  if (where === undefined) {
-    return undefined;
-  }
-
-  const keys = keysFromNode(where);
-  const neededForWhere =
-    relationshipApplies(model, relationship, keys, item => item.split('.'));
-
-  return neededForWhere || undefined;
-};
+}
 
 const shouldIncludeRelationship = (model, relationship, params) => {
   // see if this applies at all to the passed in model (if not it could be brought in elsewhere)
@@ -159,7 +126,7 @@ const shouldIncludeRelationship = (model, relationship, params) => {
   // If some part of our query requires the relationship, it trumps the schema definition
   const checks = compileCheckList(params);
 
-  const results = checks.map(check => check(model, relationship, params));
+  const results = checks.map(check => check(model, relationship));
   const includeByQuery = _.some(results, result => result === true);
   const excludeByQuery = _.some(results, result => result === false);
 
@@ -245,9 +212,6 @@ const defineInclude = (model, relationship, params, path) => {
 
 // entry point for recursion so we can go down the rabbit hole
 const build = (model, params, path = []) => {
-
-
-  console.log(params);
 
   const appliedRelationships = _.filter(params.relationships,
     relationship => shouldIncludeRelationship(model, relationship, params));
