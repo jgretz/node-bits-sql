@@ -113,7 +113,7 @@ const buildShouldInclude = (models, overrideDefault) => {
     }
 
     const includesRelationship = relationshipApplies(model, relationship, models, item => item.split('.'));
-    return overrideDefault ? (includesRelationship || undefined) : includesRelationship;
+    return overrideDefault ? includesRelationship : (includesRelationship || undefined);
   }
 }
 
