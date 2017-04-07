@@ -21,6 +21,10 @@ const searchTeamForRelationship = (model, relationship) => {
 
 const notNull = array => _.filter(array, c => !_.isNil(c));
 
+const relationshipNameMatches = (name, relationshipName)  => {
+  return name && relationshipName && (name === relationshipName || name === pluralize(relationshipName) || name === pluralize.singular(relationshipName));
+}
+
 const keysFromNode = node => {
   if (_.isArray(node)) {
     return _.flatMap(notNull(node.map(c => keysFromNode(c))));
@@ -41,23 +45,14 @@ const keysFromNode = node => {
 };
 
 
-const relationshipApplies = (model, relationship, piece, split) => {
+const relationshipApplies = (model, relationship, piece, path) => {
   const searchTerm = searchTeamForRelationship(model, relationship);
   return _.some(piece, item => {
-    const parts = split(item);
-    if (parts.includes(searchTerm)) {
-      return true;
-    }
+    const itemComponents = _.take(item.split('.'), path.length+1);
+    const relationshipName = _.last(itemComponents);
 
-    if (parts.includes(pluralize(searchTerm))) {
-      return true;
-    }
-
-    if (parts.includes(pluralize.singular(searchTerm))) {
-      return true;
-    }
-
-    return false;
+    const pathMatches = path.length === 0 || _.every(_.zipWith(path, _.dropRight(itemComponents, 1), relationshipNameMatches));
+    return pathMatches && relationshipNameMatches(relationshipName, searchTerm);
   });
 };
 
@@ -106,18 +101,18 @@ const shouldIncludeBySchemaDefinition = (model, relationship, params) => {
 };
 
 const buildShouldInclude = (models, overrideDefault) => {
-  return (model, relationship) => {
+  return (model, relationship, path) => {
     // nothing specified, so don't imply either way
     if (models === undefined) {
       return undefined;
     }
 
-    const includesRelationship = relationshipApplies(model, relationship, models, item => item.split('.'));
+    const includesRelationship = relationshipApplies(model, relationship, models, path);
     return overrideDefault ? includesRelationship : (includesRelationship || undefined);
   }
 }
 
-const shouldIncludeRelationship = (model, relationship, params) => {
+const shouldIncludeRelationship = (model, relationship, params, path) => {
   // see if this applies at all to the passed in model (if not it could be brought in elsewhere)
   if (relationship.model !== model.name && relationship.references !== model.name) {
     return false;
@@ -126,7 +121,7 @@ const shouldIncludeRelationship = (model, relationship, params) => {
   // If some part of our query requires the relationship, it trumps the schema definition
   const checks = compileCheckList(params);
 
-  const results = checks.map(check => check(model, relationship));
+  const results = checks.map(check => check(model, relationship, path));
   const includeByQuery = _.some(results, result => result === true);
   const excludeByQuery = _.some(results, result => result === false);
 
@@ -184,7 +179,7 @@ const defineAttributes = (related, relationship, params) => {
 
     const term = relationship.as ? relationship.as.replace('Id', '') : related.name;
 
-    if (pieces[pieces.length - 2] === pluralize(term) || pieces[pieces.length-2] === pluralize.singular(term)) {
+    if (relationshipNameMatches(pieces[pieces.length - 2], term)) {
       attributes.push(pieces[pieces.length - 1]);
     }
   });
@@ -205,17 +200,17 @@ const defineInclude = (model, relationship, params, path) => {
   return {
     as: foreignKeyRelationshipName(relationship),
     model: related,
-    include: build(related, params, [...path, model.name]), // eslint-disable-line
+    include: build(related, params, [...path, related.name]), // eslint-disable-line
     separate: defineSeparate(relationship, params),
     attributes: defineAttributes(related, relationship, params),
   };
 };
 
 // entry point for recursion so we can go down the rabbit hole
-const build = (model, params, path = []) => {
+const build = (model, params, path) => {
 
   const appliedRelationships = _.filter(params.relationships,
-    relationship => shouldIncludeRelationship(model, relationship, params));
+    relationship => shouldIncludeRelationship(model, relationship, params, _.slice(path, 1)));
 
   const includes = appliedRelationships.map(
     relationship => defineInclude(model, relationship, params, path)
@@ -226,4 +221,4 @@ const build = (model, params, path = []) => {
 
 // public interface
 export const buildInclude = (args, mode, model, models, relationships, constraints) =>
-  build(model, {mode, models, relationships, args, constraints});
+  build(model, {mode, models, relationships, args, constraints}, [model.name]);
