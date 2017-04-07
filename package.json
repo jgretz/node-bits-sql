@@ -1,6 +1,6 @@
 {
   "name": "node-bits-sql",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "description": "Provides the logic for connecting bits to a sql database",
   "main": "lib/index.js",
   "scripts": {
