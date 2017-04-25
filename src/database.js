@@ -81,7 +81,7 @@ class Implementation {
         }
       });
 
-    database = {db, models};
+    database = {db, models, sequelize};
   }
 
   defineRelationships(config, models, db) {
