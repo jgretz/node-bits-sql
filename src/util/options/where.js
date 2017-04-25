@@ -35,32 +35,41 @@ const mapKey = key => {
   return key;
 };
 
-const mapNode = node => {
+const mapNode = (node, sequelize) => {
+  console.log('inputNode : ', node, _.isUndefined(node.leftFunc));
   if (_.isArray(node)) {
-    return node.map(inner => mapNode(inner));
+    return node.map(inner => mapNode(inner, sequelize));
   }
 
   if (_.isObject(node)) {
     return _.reduce(node, (result, value, key) => {
-      const mappedKey = mapKey(key);
-      let mappedValue = mapNode(value);
+      if (_.isUndefined(node.leftFunc)) {
+        const mappedKey = mapKey(key);
+        let mappedValue = mapNode(value, sequelize);
 
-      const translate = literalMap[key];
-      if (translate) {
-        mappedValue = translate(mappedValue);
+        const translate = literalMap[key];
+        if (translate) {
+          mappedValue = translate(mappedValue);
+        }
+
+        return {...result, [mappedKey]: mappedValue};
       }
-
-      return {...result, [mappedKey]: mappedValue};
+console.log('compare node for function', node.compare);
+console.log('mapped node for function', mapNode(node.compare, sequelize));
+      const mappedValue = mapNode(node.compare, sequelize);
+      return {...result, $col: sequelize.where(sequelize.fn('lower', sequelize.col('name')), mappedValue.$col ? mappedValue.$col : mappedValue)};
     }, {});
   }
 
   return node;
 };
 
-export const buildWhere = args => {
+export const buildWhere = (args, models, relationships, database) => {
   if (!args.where || _.keys(args.where).length === 0) {
     return undefined; // eslint-disable-line
   }
+console.log(JSON.stringify(args.where));
+  const {sequelize} = database;
 
-  return mapNode(args.where);
+  return mapNode(args.where, sequelize);
 };

@@ -81,7 +81,7 @@ class Implementation {
         }
       });
 
-    database = {db, models};
+    database = {db, models, sequelize};
   }
 
   defineRelationships(config, models, db) {
@@ -109,6 +109,8 @@ class Implementation {
       [START]: () => options.start,
       [MAX]: () => options.max,
     };
+
+console.log('options to db: ', options.where);
 
     const findAll = () => model.findAll(options).then(result => result.map(item => item.dataValues));
     const wrap = (value, meta) => {
