@@ -2,6 +2,7 @@
 import _ from 'lodash';
 
 const operatorMap = {
+  eq: '$eq',
   ne: '$ne',
   gt: '$gt',
   ge: '$gte',
@@ -67,7 +68,7 @@ const mapNode = (node, sequelize) => {
 
       if (_.isUndefined(node.leftFunc) === false) {
         mappedValue = mapNode(node.compare, sequelize);
-        return {...result, $col: sequelize.where(functionMap[node.leftFunc.func]({args: node.leftFunc.args, sequelize}), mappedValue.$col ? mappedValue.$col : mappedValue)};
+        return {...result, $col: sequelize.where(functionMap[node.leftFunc.func]({args: node.leftFunc.args, sequelize}), mappedValue)};
       }
 
       if (_.isUndefined(value.func) === false) {
@@ -96,6 +97,10 @@ console.log(JSON.stringify(args.where));
   if (!args.where || _.keys(args.where).length === 0) {
     return undefined; // eslint-disable-line
   }
-
+try {
   return mapNode(args.where, sequelize);
+}catch(ex) {
+  console.log(ex);
+  throw ex;
+}
 };
