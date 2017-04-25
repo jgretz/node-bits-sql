@@ -1,5 +1,6 @@
 /* eslint-disable no-use-before-define */
 import _ from 'lodash';
+import logError from 'node-bits';
 
 const operatorMap = {
   eq: '$eq',
@@ -66,9 +67,9 @@ const mapNode = (node, sequelize) => {
       const mappedKey = mapKey(key);
       let mappedValue = '';
 
-      if (_.isUndefined(node.leftFunc) === false) {
+      if (_.isUndefined(node.columnFunc) === false) {
         mappedValue = mapNode(node.compare, sequelize);
-        return {...result, $col: sequelize.where(functionMap[node.leftFunc.func]({args: node.leftFunc.args, sequelize}), mappedValue)};
+        return {...result, $col: sequelize.where(functionMap[node.columnFunc.func]({args: node.columnFunc.args, sequelize}), mappedValue)};
       }
 
       if (_.isUndefined(value.func) === false) {
@@ -93,14 +94,14 @@ const mapNode = (node, sequelize) => {
 
 export const buildWhere = (args, models, relationships, database) => {
   const {sequelize} = database;
-console.log(JSON.stringify(args.where));
+
   if (!args.where || _.keys(args.where).length === 0) {
     return undefined; // eslint-disable-line
   }
-try {
-  return mapNode(args.where, sequelize);
-}catch(ex) {
-  console.log(ex);
-  throw ex;
-}
+  try {
+    return mapNode(args.where, sequelize);
+  } catch (ex) {
+    logError(ex);
+    throw ex;
+  }
 };
