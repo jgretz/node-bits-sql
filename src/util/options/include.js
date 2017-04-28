@@ -21,9 +21,8 @@ const searchTeamForRelationship = (model, relationship) => {
 
 const notNull = array => _.filter(array, c => !_.isNil(c));
 
-const relationshipNameMatches = (name, relationshipName)  => {
-  return name && relationshipName && (name === relationshipName || name === pluralize(relationshipName) || name === pluralize.singular(relationshipName));
-}
+const relationshipNameMatches = (name, relationshipName) =>
+  name && relationshipName && (name === relationshipName || name === pluralize(relationshipName) || name === pluralize.singular(relationshipName));
 
 const keysFromNode = node => {
   if (_.isArray(node)) {
@@ -48,7 +47,7 @@ const keysFromNode = node => {
 const relationshipApplies = (model, relationship, piece, path) => {
   const searchTerm = searchTeamForRelationship(model, relationship);
   return _.some(piece, item => {
-    const itemComponents = _.take(item.split('.'), path.length+1);
+    const itemComponents = _.take(item.split('.'), path.length + 1);
     const relationshipName = _.last(itemComponents);
 
     const pathMatches = path.length === 0 || _.every(_.zipWith(path, _.dropRight(itemComponents, 1), relationshipNameMatches));
@@ -100,8 +99,8 @@ const shouldIncludeBySchemaDefinition = (model, relationship, params) => {
   return false;
 };
 
-const buildShouldInclude = (models, overrideDefault) => {
-  return (model, relationship, path) => {
+const buildShouldInclude = (models, overrideDefault) =>
+  (model, relationship, path) => {
     // nothing specified, so don't imply either way
     if (models === undefined) {
       return undefined;
@@ -109,8 +108,7 @@ const buildShouldInclude = (models, overrideDefault) => {
 
     const includesRelationship = relationshipApplies(model, relationship, models, path);
     return overrideDefault ? includesRelationship : (includesRelationship || undefined);
-  }
-}
+  };
 
 const shouldIncludeRelationship = (model, relationship, params, path) => {
   // see if this applies at all to the passed in model (if not it could be brought in elsewhere)
