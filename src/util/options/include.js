@@ -7,9 +7,9 @@ import {foreignKeyRelationshipName} from '../foreign_key_name';
 import {READ} from '../../constants';
 
 // boolean functions to define if the relationship makes it in
-const searchTeamForRelationship = (model, relationship) => {
-  if (relationship.model === model.name && relationship.as) {
-    return relationship.as.replace('Id', '');
+const searchTermForRelationship = (model, relationship) => {
+  if (relationship.as) {
+    return foreignKeyRelationshipName(relationship);
   }
 
   if (relationship.references === model.name) {
@@ -46,7 +46,7 @@ const keysFromNode = node => {
 
 
 const relationshipApplies = (model, relationship, piece, path) => {
-  const searchTerm = searchTeamForRelationship(model, relationship);
+  const searchTerm = searchTermForRelationship(model, relationship);
   return _.some(piece, item => {
     const itemComponents = _.take(item.split('.'), path.length+1);
     const relationshipName = _.last(itemComponents);
@@ -190,9 +190,9 @@ const defineAttributes = (related, relationship, params) => {
 const defineInclude = (model, relationship, params, path) => {
   // find the model
   const related = findRelatedModel(model, relationship, params);
+  const relatedName = relationship.as || related.name;
 
-  // stop the recursion from going back up the tree
-  if (path.includes(related.name)) {
+  if (path.includes(relatedName)) {
     return null;
   }
 
@@ -200,7 +200,7 @@ const defineInclude = (model, relationship, params, path) => {
   return {
     as: foreignKeyRelationshipName(relationship),
     model: related,
-    include: build(related, params, [...path, related.name]), // eslint-disable-line
+    include: build(related, params, [...path, relatedName]), // eslint-disable-line
     separate: defineSeparate(relationship, params),
     attributes: defineAttributes(related, relationship, params),
   };
