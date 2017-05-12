@@ -39,7 +39,7 @@ export const mapComplexType = definition => {
   // break apart so we can set defaults
   const {
     type, size = null, precision = null, scale = null, primaryKey = false,
-    allowNull = true, unique = false, defaultValue = null, autoIncrement = false,
+    allowNull = true, unique = false, defaultValue, autoIncrement = false,
   } = definition;
 
   // map the type to the proper sequelize definition

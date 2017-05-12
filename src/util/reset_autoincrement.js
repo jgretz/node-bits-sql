@@ -12,7 +12,7 @@ const resetPostgres = (table, column, max) =>
 const resetMssql = (table, column, max) =>
   `DBCC CHECKIDENT ('[${table}]', RESEED, ${max + 1});`;
 
-const resetMySQL = (sequelize, table, max) =>
+const resetMySQL = (table, column, max) =>
   `alter table ${table} AUTO_INCREMENT = ${max + 1};`;
 
 const map = {
@@ -34,7 +34,7 @@ export const resetAutoIncrement = (sequelize, model) => {
   log(select);
 
   return sequelize.query(select).then(result => {
-    const max = result[0][0].max;
+    const max = result[0][0].max ? result[0][0].max : 0;
     const reset = sqlGen.reset(table, column, max);
     log(reset);
 
