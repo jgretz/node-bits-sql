@@ -211,7 +211,7 @@ const defineInclude = (model, relationship, params, path) => {
   }
 
   // build include object
-  const out = {
+  return {
     as: foreignKeyRelationshipName(relationship),
     model: related,
     include: build(related, params, [...path, relatedName]), // eslint-disable-line
@@ -219,8 +219,6 @@ const defineInclude = (model, relationship, params, path) => {
     attributes: defineAttributes(related, relationship, params),
     where: defineNestedWhere(relatedName, params),
   };
-  console.log('output : ', out);
-  return out;
 };
 
 // entry point for recursion so we can go down the rabbit hole
