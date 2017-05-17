@@ -151,6 +151,12 @@ const findRelatedModel = (model, relationship, params) => {
 
 const defineSeparate = (relationship, params) => {
   const config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
+  const separateFromArgs = params.args.separate ? _.some(_.find(params.args.separate, model => _.isObject(model) ? model.model : model === pluralize(relationship.model))) : false;
+
+  if (separateFromArgs) {
+    return true;
+  }
+
   if (!config) {
     return false;
   }
@@ -185,6 +191,14 @@ const defineAttributes = (related, relationship, params) => {
   return attributes.length === 0 || attributes.includes('*') ? undefined : attributes;
 };
 
+const defineNestedWhere = (relatedName, params) => {
+  const nestedWhere = params.args.separate ? _.get(_.find(params.args.separate, separate => separate.model === pluralize(relatedName)), 'where', {}) : {};
+
+  return {
+    ...nestedWhere,
+  };
+};
+
 const defineInclude = (model, relationship, params, path) => {
   // find the model
   const related = findRelatedModel(model, relationship, params);
@@ -201,6 +215,7 @@ const defineInclude = (model, relationship, params, path) => {
     include: build(related, params, [...path, relatedName]), // eslint-disable-line
     separate: defineSeparate(relationship, params),
     attributes: defineAttributes(related, relationship, params),
+    where: defineNestedWhere(relatedName, params),
   };
 };
 
