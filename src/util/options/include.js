@@ -149,9 +149,11 @@ const findRelatedModel = (model, relationship, params) => {
   return params.models[relationship.model];
 };
 
+const seperateMatch = relationship => model => pluralize(model.model) === pluralize(relationship.model) && pluralize(model.references) === pluralize(relationship.references);
+
 const defineSeparate = (relationship, params) => {
   const config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
-  const separateFromArgs = params.args.separate ? _.some(_.find(params.args.separate, model => _.isObject(model) ? model.model : model === pluralize(relationship.model))) : false;
+  const separateFromArgs = params.args.separate ? _.some(_.find(params.args.separate, seperateMatch(relationship))) : false;
 
   if (separateFromArgs) {
     return true;
@@ -209,7 +211,7 @@ const defineInclude = (model, relationship, params, path) => {
   }
 
   // build include object
-  return {
+  const out = {
     as: foreignKeyRelationshipName(relationship),
     model: related,
     include: build(related, params, [...path, relatedName]), // eslint-disable-line
@@ -217,6 +219,8 @@ const defineInclude = (model, relationship, params, path) => {
     attributes: defineAttributes(related, relationship, params),
     where: defineNestedWhere(relatedName, params),
   };
+  console.log('output : ', out);
+  return out;
 };
 
 // entry point for recursion so we can go down the rabbit hole
