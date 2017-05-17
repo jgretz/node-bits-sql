@@ -149,7 +149,10 @@ const findRelatedModel = (model, relationship, params) => {
   return params.models[relationship.model];
 };
 
-const seperateMatch = relationship => model => pluralize(model.model) === pluralize(relationship.model) && pluralize(model.references) === pluralize(relationship.references);
+const seperateMatch = relationship => model => {
+  const references = relationship.as ? relationship.as : relationship.references;
+  return pluralize(model.model) === pluralize(relationship.model) && pluralize(model.references) === pluralize(references);
+};
 
 const defineSeparate = (relationship, params) => {
   const config = params.mode === READ ? relationship.includeInSelect : relationship.includeInWrite;
