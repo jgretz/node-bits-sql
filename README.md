@@ -182,6 +182,7 @@ datbase.find('order', {
   separate: [
     {
       model: 'products',
+      references: 'order',
       where: {
         qty: 3,
       },
