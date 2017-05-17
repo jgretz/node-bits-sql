@@ -150,6 +150,7 @@ All options are not required and can be used in any combination.
 * start: the index of the result set to start from (alternatively parameter can be named skip)
 * max: the number of records to return in the results (alternatively parameter can be named limit)
 * where: a complex object that contains the
+* separate: the ability to force a sepration during query creation, and the option to filter nested objects in the response, can contain an object or a string array
 * includeMetaData: an array of options to return wrapped around the result set. If supplied the format of the result will be ```value:[rows], ...{keys as supplied}```
 
 ##### Where
@@ -164,6 +165,29 @@ database.find('order', {
     total: { ge: 5 },
   },
 };
+```
+
+##### separate
+option to force a separate subquery for nested objects
+```
+database.find('order', {
+    separate: ['products'],
+  },
+);
+```
+
+option to force a separate subquery for nested objects with filtering
+```
+datbase.find('order', {
+  separate: [
+    {
+      model: 'products',
+      where: {
+        qty: 3,
+      },
+    },
+  ],
+});
 ```
 
 ##### Include Meta Data
