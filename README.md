@@ -178,10 +178,11 @@ database.find('order', {
 
 option to force a separate subquery for nested objects with filtering
 ```
-datbase.find('order', {
+database.find('order', {
   separate: [
     {
       model: 'products',
+      references: 'order',
       where: {
         qty: 3,
       },
