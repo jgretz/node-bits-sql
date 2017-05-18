@@ -16,9 +16,10 @@ const oneToOne = ({model, reference, rel}) => {
 const oneToMany = ({model, reference, rel}) => {
   const foreignKey = foreignKeyName(rel);
   const relationshipName = foreignKeyRelationshipName(rel);
+  const {allowNull} = rel;
 
-  model.hasMany(reference, {as: relationshipName, foreignKey, sourceKey: rel.from});
-  reference.belongsTo(model, {as: relationshipName, foreignKey, targetKey: rel.from});
+  model.hasMany(reference, {as: relationshipName, foreignKey: {name: foreignKey, allowNull}, sourceKey: rel.from});
+  reference.belongsTo(model, {as: relationshipName, foreignKey: {name: foreignKey, allowNull}, targetKey: rel.from});
 };
 
 const manyToMany = ({sequelize, model, reference, rel, models}) => {
