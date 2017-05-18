@@ -90,6 +90,17 @@ export const order_customer = {
 }
 ```
 
+The allowNull attribute on a relationship requires a relationship to be present
+
+```
+{
+  model: 'order',
+  references: 'customer',
+  type: MANY_TO_ONE,
+  allowNull: false,
+}
+```
+
 In addition, you can specify whether to include the related object in queries and/or updates. This is done by the following config settings:
 
 ```
