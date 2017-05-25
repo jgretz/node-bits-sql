@@ -20,7 +20,7 @@ const findOld = (database, model, args) => {
   const options = buildOptions(READ, model, database, args);
   const ops = {...options, where: args.backwardsQuery};
 
-  return model.findAll(ops).then(result => result.map(item => item.dataValues));
+  return model.findAll(ops).then(result => result.map(item => item.get({plain: true})));
 };
 
 // configure the sequelize specific logic
@@ -91,7 +91,7 @@ class Implementation {
   // CRUD
   findById(model, args) {
     return model.findById(args.id, buildOptions(READ, model, database, args))
-      .then(result => result ? result.dataValues : null);
+      .then(result => result ? result.get({plain: true}) : null);
   }
 
   find(model, args) {
@@ -110,7 +110,7 @@ class Implementation {
       [MAX]: () => options.max,
     };
 
-    const findAll = () => model.findAll(options).then(result => result.map(item => item.dataValues));
+    const findAll = () => model.findAll(options).then(result => result.map(item => item.get({plain: true})));
     const wrap = (value, meta) => {
       const result = {value};
 
