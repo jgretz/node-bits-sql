@@ -196,13 +196,11 @@ const defineAttributes = (related, relationship, params) => {
   return attributes.length === 0 || attributes.includes('*') ? undefined : attributes;
 };
 
-const defineNestedWhere = (relatedName, params) => {
-  const nestedWhere = params.args.separate ? _.get(_.find(params.args.separate, separate => separate.model === pluralize(relatedName)), 'where', {}) : {};
-
-  return {
-    ...nestedWhere,
-  };
-};
+const defineNestedWhere = (relatedName, params) =>
+  _.chain(params.args.separate)
+    .find(rel => relationshipNameMatches(rel.model, relatedName))
+    .get('where')
+    .value();
 
 const defineInclude = (model, relationship, params, path) => {
   // find the model
