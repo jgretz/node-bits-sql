@@ -206,6 +206,7 @@ const defineInclude = (model, relationship, params, path) => {
   // find the model
   const related = findRelatedModel(model, relationship, params);
   const relatedName = relationship.as || related.name;
+  const separate = defineSeparate(relationship, params);
 
   if (path.includes(relatedName)) {
     return null;
@@ -216,7 +217,8 @@ const defineInclude = (model, relationship, params, path) => {
     as: foreignKeyRelationshipName(relationship),
     model: related,
     include: build(related, params, [...path, relatedName]), // eslint-disable-line
-    separate: defineSeparate(relationship, params),
+    separate,
+    offset: separate ? 0 : null,
     attributes: defineAttributes(related, relationship, params),
     where: defineNestedWhere(relatedName, params),
   };
