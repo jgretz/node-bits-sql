@@ -58,7 +58,7 @@ class Implementation {
   }
 
   afterSynchronizeSchema(config, models, db) {
-    const {forceSync} = config;
+    const {forceSync, alterSync} = config;
     if (forceSync && config.runMigrations) {
       logWarning(`forceSync and runMigrations are mutually exclusive.
         node-bits-sql will prefer forceSync and not run migrations.`);
@@ -67,7 +67,7 @@ class Implementation {
     const shouldRunMigrations = config.runMigrations && !forceSync;
     const tasks = [
       () => shouldRunMigrations ? runMigrations(sequelize, db.migrations) : Promise.resolve(),
-      () => sequelize.sync({force: forceSync}),
+      () => sequelize.sync({force: forceSync, alter: alterSync}),
       () => config.runSeeds ? runSeeds(sequelize, models, db, forceSync) : Promise.resolve(),
     ];
 
@@ -139,7 +139,7 @@ class Implementation {
     // we can't use findAndCount because it counts all the included models as well
     const countOptions = buildOptionsForCount(READ, model, database, args);
     return model.count(countOptions)
-    .then(count => findAll().then(value => wrap(value, {count})));
+      .then(count => findAll().then(value => wrap(value, {count})));
   }
 
   create(model, args) {
