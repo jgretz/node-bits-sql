@@ -970,13 +970,7 @@ debug@2.2.0, debug@~2.2.0:
   dependencies:
     ms "0.7.1"
 
-debug@^2.1.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.1.tgz#79855090ba2c4e3115cc7d8769491d58f0491351"
-  dependencies:
-    ms "0.7.2"
-
-debug@^2.2.0, debug@^2.3.0, debug@^2.6.8:
+debug@^2.1.1, debug@^2.2.0, debug@^2.3.0, debug@^2.6.8:
   version "2.6.8"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.8.tgz#e731531ca2ede27d188222427da17821d68ff4fc"
   dependencies:
@@ -2005,10 +1999,6 @@ ms@0.7.1:
   version "0.7.1"
   resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.1.tgz#9cd13c03adbff25b65effde7ce864ee952017098"
 
-ms@0.7.2:
-  version "0.7.2"
-  resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.2.tgz#ae25cf2512b3885a1d95d7f037868d8431124765"
-
 ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
@@ -2031,9 +2021,9 @@ nested-error-stacks@^1.0.0:
   dependencies:
     inherits "~2.0.1"
 
-node-bits-internal-database@^0.0.10:
-  version "0.0.10"
-  resolved "https://registry.yarnpkg.com/node-bits-internal-database/-/node-bits-internal-database-0.0.10.tgz#e3dd976d059257686035f90439a1dd566ec2ff0a"
+node-bits-internal-database@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.yarnpkg.com/node-bits-internal-database/-/node-bits-internal-database-0.0.11.tgz#be07871f65446803caf6cf6224c76baa8eb1586d"
   dependencies:
     class-autobind "^0.1.4"
     lodash "^4.17.4"

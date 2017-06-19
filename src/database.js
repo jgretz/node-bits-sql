@@ -143,13 +143,13 @@ class Implementation {
   }
 
   create(model, args) {
-    const options = buildOptions(WRITE, model, database, args);
+    const options = buildOptions(WRITE, model, database, args.options);
     return model.create(args.data, {returning: true, ...options})
       .then(created => created.get({plain: true}));
   }
 
   update(model, args) {
-    const options = buildOptions(WRITE, model, database, args);
+    const options = buildOptions(WRITE, model, database, args.options);
     return model.update(args.data, {...options, where: {id: args.id}});
   }
 
