@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import Sequelize from 'sequelize';
 import {logWarning} from 'node-bits';
-import {foreignKeyRelationshipName, foreignKeyName} from './foreign_key_name';
+import {foreignKeyRelationshipName, foreignKeyName, manyToManyTableName} from './relationship_names';
 
 const oneToOne = ({model, reference, rel}) => {
   const foreignKey = foreignKeyName(rel);
@@ -24,7 +24,7 @@ const oneToMany = ({model, reference, rel}) => {
 
 const manyToMany = ({sequelize, model, reference, rel, models}) => {
   // define join
-  const joinName = rel.through || `${model.name}_${reference.name}`;
+  const joinName = manyToManyTableName(rel);
   const sourceId = rel.source || `${model.name}Id`;
   const targetId = rel.target || `${reference.name}Id`;
   const joinModel = sequelize.define(joinName, {

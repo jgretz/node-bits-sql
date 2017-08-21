@@ -1,6 +1,7 @@
 import _ from 'lodash';
+import {manyToManyTableName} from './relationship_names';
 import Sequelize from 'sequelize';
-import {log, logWarning, logError, executeSeries} from 'node-bits';
+import {log, logWarning, logError, executeSeries, MANY_TO_ONE, ONE_TO_MANY, ONE_TO_ONE,  MANY_TO_MANY} from 'node-bits';
 import {resetAutoIncrement} from './reset_autoincrement';
 
 const SEEDS = 'seeds';
@@ -40,18 +41,33 @@ const getSeedHistory = (sequelize, forceSync) =>
     .catch(createSeeds);
   });
 
+const isRelationshipDependent = {
+  ONE_TO_ONE: (rel, seed) => rel.references === seed.name,
+  ONE_TO_MANY: (rel, seed) => rel.references === seed.name,
+  MANY_TO_ONE: (rel, seed) => rel.model === seed.name,
+  MANY_TO_MANY: (rel, seed) => rel.model === seed.name || rel.references === seed.name
+}
+
+const depdendentName = {
+  ONE_TO_ONE: rel => rel.model,
+  ONE_TO_MANY: rel => rel.model,
+  MANY_TO_ONE: rel => rel.references,
+  MANY_TO_MANY: rel => manyToManyTableName(rel)
+}
+
 const sortByDependency = (toRun, db) => {
+
   // map everything out
   const map = {};
   _.forEach(toRun, seed => {
     map[seed.name] = seed;
-    seed.dependents = _.filter(db.relationships, rel => rel.references === seed.name);
+    seed.dependents = _.filter(db.relationships, rel => isRelationshipDependent[rel.type](rel, seed));
   });
 
   // count logic
   const count = seed =>
     seed.dependents.length + _.sumBy(seed.dependents, r => {
-      const dependent = map[r.model];
+      const dependent = map[depdendentName[r.type](r)];
       return dependent ? count(dependent) : 0;
     });
 

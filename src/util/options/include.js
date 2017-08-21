@@ -3,7 +3,7 @@
 import _ from 'lodash';
 import {MANY_TO_ONE, MANY_TO_MANY} from 'node-bits';
 import pluralize from 'pluralize';
-import {foreignKeyRelationshipName} from '../foreign_key_name';
+import {foreignKeyRelationshipName} from '../relationship_names';
 import {READ} from '../../constants';
 
 // boolean functions to define if the relationship makes it in
