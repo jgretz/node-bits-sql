@@ -13,3 +13,5 @@ export const foreignKeyName = rel => {
 
   return rel.as.endsWith('Id') ? rel.as : `${rel.as}Id`;
 };
+
+export const manyToManyTableName = rel => rel.through || `${rel.model}_${rel.references}`;
