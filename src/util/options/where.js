@@ -72,7 +72,7 @@ const mapNode = (node, sequelize) => {
         return {...result, $col: sequelize.where(functionMap[node.columnFunc.func]({args: node.columnFunc.args, sequelize}), mappedValue)};
       }
 
-      if (_.isUndefined(value.func) === false) {
+      if (value && _.isUndefined(value.func) === false) {
         mappedValue = functionMap[value.func]({args: value.args, sequelize, key});
         return {...result, [mappedKey]: mappedValue};
       }
