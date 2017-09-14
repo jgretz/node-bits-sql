@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {
-  logWarning, logError, executeSeries,
+  log, logWarning, logError, executeSeries,
   COUNT, START, MAX,
 } from 'node-bits';
 import {Database} from 'node-bits-internal-database';
@@ -68,7 +68,7 @@ class Implementation {
     const tasks = [
       () => shouldRunMigrations ? runMigrations(sequelize, db.migrations) : Promise.resolve(),
       () => sequelize.sync({force: forceSync, alter: alterSync}),
-      () => config.runSeeds ? runSeeds(sequelize, models, db, forceSync) : Promise.resolve(),
+      () => config.runSeeds ? runSeeds(sequelize, models, db, forceSync) : Promise.resolve(log('Database ready ...')),
     ];
 
     executeSeries(tasks)
