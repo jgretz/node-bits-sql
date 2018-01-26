@@ -1,21 +1,24 @@
 /* eslint-disable no-use-before-define */
 import _ from 'lodash';
 import logError from 'node-bits';
+import Sequelize from 'sequelize';
+
+const Op = Sequelize.Op;
 
 const operatorMap = {
-  eq: '$eq',
-  ne: '$ne',
-  gt: '$gt',
-  ge: '$gte',
-  gte: '$gte',
-  lt: '$lt',
-  le: '$lte',
-  lte: '$lte',
-  and: '$and',
-  or: '$or',
-  like: '$like',
-  startsWith: '$like',
-  endsWith: '$like',
+  eq: Op.eq,
+  ne: Op.ne,
+  gt: Op.gt,
+  ge: Op.gte,
+  gte: Op.gte,
+  lt: Op.lt,
+  le: Op.lte,
+  lte: Op.lte,
+  and: Op.and,
+  or: Op.or,
+  like: Op.like,
+  startsWith: Op.like,
+  endsWith: Op.like,
 };
 
 const literalMap = {
