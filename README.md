@@ -126,14 +126,14 @@ The includeInSelect option also accepts a complex object with more specific flag
 This will open a connection to the database.
 
 ### rawConnection
-Sometimes you need the raw mongo connection to do something that node-bits-mongo hasn't exposed. This method will return the [mongoosejs](http://mongoosejs.com/) connection to you.
+Sometimes you need the raw sequelize connection to do something that node-bits-sql hasn't exposed. This method will return the [sequelize](http://docs.sequelizejs.com/) connection to you.
 
 ### getModel
 ```
 getModel(name)
 ```
 
-This will return to you the mongoosejs model.
+This will return to you the sequelizejs model.
 
 ### findById
 ```
