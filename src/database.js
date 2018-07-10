@@ -150,7 +150,15 @@ class Implementation {
 
   update(model, args) {
     const options = buildOptions(WRITE, model, database, args.options);
-    return model.update(args.data, {...options, where: {id: args.id}});
+    return model.update(args.data, {returning: true, ...options, where: {id: args.id}})
+      .then(result => {
+        if (_.isArray(result)) {
+          const [_, [updated]] = result; // eslint-disable-line
+          return updated.get({plain: true});
+        }
+
+        return result;
+      });
   }
 
   delete(model, args) {
