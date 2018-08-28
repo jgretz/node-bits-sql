@@ -1,6 +1,6 @@
 {
   "name": "node-bits-sql",
-  "version": "0.0.62",
+  "version": "0.0.63",
   "description": "Provides the logic for connecting bits to a sql database",
   "main": "lib/index.js",
   "scripts": {
@@ -19,23 +19,23 @@
   },
   "homepage": "https://github.com/jgretz/node-bits-sql#readme",
   "dependencies": {
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.10",
     "node-bits": "^0.0.34",
     "node-bits-internal-database": "^0.0.11",
     "pluralize": "^7.0.0",
-    "semver": "^5.5.0",
-    "sequelize": "^4.32.2"
+    "semver": "^5.5.1",
+    "sequelize": "^4.38.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.0",
-    "babel-eslint": "^8.2.1",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^9.0.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-1": "^6.24.1",
     "babel-register": "^6.26.0",
-    "eslint": "^4.16.0",
-    "eslint-plugin-import": "^2.8.0",
-    "nodemon": "^1.14.11",
-    "shelljs": "^0.8.1"
+    "eslint": "^5.4.0",
+    "eslint-plugin-import": "^2.14.0",
+    "nodemon": "^1.18.3",
+    "shelljs": "^0.8.2"
   }
 }

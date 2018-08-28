@@ -30,7 +30,7 @@ let database = {};
 class Implementation {
   // connect
   connect(config) {
-    sequelize = config.connection();
+    sequelize = _.isFunction(config.connection) ? config.connection() : config.connection;
     sequelize.authenticate()
       .catch(err => {
         logError('Unable to authenticate database connection: ', err);
