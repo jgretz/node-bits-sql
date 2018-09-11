@@ -1,14 +1,24 @@
 import _ from 'lodash';
 import {
-  log, logWarning, logError, executeSeries,
-  COUNT, START, MAX,
+  log,
+  logWarning,
+  logError,
+  executeSeries,
+  COUNT,
+  START,
+  MAX,
 } from 'node-bits';
 import {Database} from 'node-bits-internal-database';
 
 import {
-  flattenSchema, mapComplexType, defineRelationships, defineIndexesForSchema,
-  runMigrations, runSeeds,
-  buildOptions, buildOptionsForCount,
+  flattenSchema,
+  mapComplexType,
+  defineRelationships,
+  defineIndexesForSchema,
+  runMigrations,
+  runSeeds,
+  buildOptions,
+  buildOptionsForCount,
 } from './util';
 
 import {READ, WRITE} from './constants';
@@ -20,7 +30,9 @@ const findOld = (database, model, args) => {
   const options = buildOptions(READ, model, database, args);
   const ops = {...options, where: args.backwardsQuery};
 
-  return model.findAll(ops).then(result => result.map(item => item.get({plain: true})));
+  return model
+    .findAll(ops)
+    .then(result => result.map(item => item.get({plain: true})));
 };
 
 // configure the sequelize specific logic
@@ -30,12 +42,13 @@ let database = {};
 class Implementation {
   // connect
   connect(config) {
-    sequelize = _.isFunction(config.connection) ? config.connection() : config.connection;
-    sequelize.authenticate()
-      .catch(err => {
-        logError('Unable to authenticate database connection: ', err);
-        sequelize = null;
-      });
+    sequelize = _.isFunction(config.connection)
+      ? config.connection()
+      : config.connection;
+    sequelize.authenticate().catch(err => {
+      logError('Unable to authenticate database connection: ', err);
+      sequelize = null;
+    });
   }
 
   rawConnection() {
@@ -44,7 +57,11 @@ class Implementation {
 
   // schema
   updateSchema(name, schema, db) {
-    return sequelize.define(name, mapSchema(schema), defineIndexesForSchema(name, db));
+    return sequelize.define(
+      name,
+      mapSchema(schema),
+      defineIndexesForSchema(name, db)
+    );
   }
 
   removeSchema(name, model) {
@@ -66,20 +83,25 @@ class Implementation {
 
     const shouldRunMigrations = config.runMigrations && !forceSync;
     const tasks = [
-      () => shouldRunMigrations ? runMigrations(sequelize, db.migrations) : Promise.resolve(),
+      () =>
+        shouldRunMigrations
+          ? runMigrations(sequelize, db.migrations)
+          : Promise.resolve(),
       () => sequelize.sync({force: forceSync, alter: alterSync}),
-      () => config.runSeeds ? runSeeds(sequelize, models, db, forceSync) : Promise.resolve(log('Database ready ...')),
+      () =>
+        config.runSeeds
+          ? runSeeds(sequelize, models, db, forceSync)
+          : Promise.resolve(log('Database ready ...')),
     ];
 
-    executeSeries(tasks)
-      .catch(err => {
-        // see if this is a DatabaseError
-        if (err.sql) {
-          logError(`${err.sql}\ncaused ${err.parent}`);
-        } else {
-          logError(err);
-        }
-      });
+    executeSeries(tasks).catch(err => {
+      // see if this is a DatabaseError
+      if (err.sql) {
+        logError(`${err.sql}\ncaused ${err.parent}`);
+      } else {
+        logError(err);
+      }
+    });
 
     database = {db, models, sequelize};
   }
@@ -90,8 +112,9 @@ class Implementation {
 
   // CRUD
   findById(model, args) {
-    return model.findById(args.id, buildOptions(READ, model, database, args))
-      .then(result => result ? result.get({plain: true}) : null);
+    return model
+      .findById(args.id, buildOptions(READ, model, database, args))
+      .then(result => (result ? result.get({plain: true}) : null));
   }
 
   find(model, args) {
@@ -110,7 +133,10 @@ class Implementation {
       [MAX]: () => options.max,
     };
 
-    const findAll = () => model.findAll(options).then(result => result.map(item => item.get({plain: true})));
+    const findAll = () =>
+      model
+        .findAll(options)
+        .then(result => result.map(item => item.get({plain: true})));
     const wrap = (value, meta) => {
       const result = {value};
 
@@ -130,7 +156,9 @@ class Implementation {
     }
 
     // non-count meta data
-    const shouldCount = args.includeMetaData && _.some(args.includeMetaData, x => x.value === COUNT);
+    const shouldCount =
+      args.includeMetaData &&
+      _.some(args.includeMetaData, x => x.value === COUNT);
     if (!shouldCount) {
       return findAll().then(wrap);
     }
@@ -138,19 +166,26 @@ class Implementation {
     // get the count then return
     // we can't use findAndCount because it counts all the included models as well
     const countOptions = buildOptionsForCount(READ, model, database, args);
-    return model.count(countOptions)
+    return model
+      .count(countOptions)
       .then(count => findAll().then(value => wrap(value, {count})));
   }
 
   create(model, args) {
     const options = buildOptions(WRITE, model, database, args.options);
-    return model.create(args.data, {returning: true, ...options})
+    return model
+      .create(args.data, {returning: true, ...options})
       .then(created => created.get({plain: true}));
   }
 
   update(model, args) {
     const options = buildOptions(WRITE, model, database, args.options);
-    return model.update(args.data, {returning: true, ...options, where: {id: args.id}})
+    return model
+      .update(args.data, {
+        returning: true,
+        ...options,
+        where: {id: args.id},
+      })
       .then(result => {
         if (_.isArray(result)) {
           const [_, [updated]] = result; // eslint-disable-line
@@ -168,3 +203,7 @@ class Implementation {
 
 // export the database
 export default config => new Database(config, new Implementation());
+
+// export function to allow for creation of a database object from a raw sequelize connection
+export const createDatabaseConnectionFromSequelize = connection =>
+  new Database({connection}, new Implementation());
