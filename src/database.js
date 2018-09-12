@@ -8,7 +8,7 @@ import {
   START,
   MAX,
 } from 'node-bits';
-import {Database} from 'node-bits-internal-database';
+import {Database, execute} from 'node-bits-internal-database';
 
 import {
   flattenSchema,
@@ -205,5 +205,10 @@ class Implementation {
 export default config => new Database(config, new Implementation());
 
 // export function to allow for creation of a database object from a raw sequelize connection
-export const createDatabaseConnectionFromSequelize = connection =>
-  new Database({connection}, new Implementation());
+// has a little inside baseball configuration
+export const createDatabaseConnectionFromSequelize = connection => {
+  const db = new Database({connection}, new Implementation());
+  db.execute = execute(db.schema, {}, name => db.models[name]);
+
+  return db;
+};
