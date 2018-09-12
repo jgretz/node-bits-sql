@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import _ from 'lodash';
 import Sequelize from 'sequelize';
 import semver from 'semver';
@@ -13,7 +14,11 @@ const MODEL_MAP = {
   createdAt: {type: Sequelize.DATE},
   updatedAt: {type: Sequelize.DATE},
   version: {type: Sequelize.STRING},
-  assumedOnCreation: {type: Sequelize.BOOLEAN, defaultValue: false, allowNull: false},
+  assumedOnCreation: {
+    type: Sequelize.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+  },
 };
 
 const NO_MIGRATIONS = 'Database ready ... No migrations to run.';
@@ -21,17 +26,19 @@ const MIGRATIONS_RUN = 'Database ready ... Migrations complete.';
 
 const getMigrationHistory = sequelize =>
   new Promise((resolve, reject) => {
-    sequelize.query(`SELECT version FROM ${MIGRATIONS}`).then(migrations => {
-      const versions = migrations[0].map(m => m.version);
-      resolve(versions);
-    })
-    .catch(() => reject());
+    sequelize
+      .query(`SELECT version FROM ${MIGRATIONS}`)
+      .then(migrations => {
+        const versions = migrations[0].map(m => m.version);
+        resolve(versions);
+      })
+      .catch(() => reject());
   });
 
 const createMigrationHistory = (sequelize, model, migrations) => {
   // create an entry for each of the migrations to date, so we don't run them in the future
-  const seeds = migrations.map(migration =>
-    () => model.create({version: migration.version, assumedOnCreation: true})
+  const seeds = migrations.map(migration => () =>
+    model.create({version: migration.version, assumedOnCreation: true})
   );
 
   return executeSeries([
@@ -40,39 +47,54 @@ const createMigrationHistory = (sequelize, model, migrations) => {
   ]);
 };
 
-const applyMigrations = (sequelize, model, migrations, migrationHistory) => {
+const applyMigrations = (
+  sequelize,
+  model,
+  migrations,
+  migrationHistory,
+  models
+) => {
   // determine which migrations to run
-  const toRun = _.reject(migrations, migration => migrationHistory.includes(migration.version));
+  const toRun = _.reject(migrations, migration =>
+    migrationHistory.includes(migration.version)
+  );
 
   if (_.isEmpty(toRun)) {
     log(NO_MIGRATIONS);
     return Promise.resolve();
   }
 
-  const tasks = toRun.map(migration => () => {
-    log(`Running Migration ${migration.version}`);
+  const tasks = toRun.map(
+    migration => () => {
+      log(`Running Migration ${migration.version}`);
 
-    return migration.migration.up(sequelize.queryInterface, sequelize)
-      .then(() => model.create({version: migration.version}))
-      .catch(err => {
-        log(`Migration ${migration.version} Failed:`);
-        logError(err);
+      return migration.migration
+        .up(sequelize.queryInterface, sequelize, models)
+        .then(() => model.create({version: migration.version}))
+        .catch(err => {
+          log(`Migration ${migration.version} Failed:`);
+          logError(err);
 
-        throw err;
-      });
+          throw err;
+        });
     } // eslint-disable-line
   );
 
-  return executeSeries(tasks)
-    .then(() => {
-      log(MIGRATIONS_RUN);
-    });
+  return executeSeries(tasks).then(() => {
+    log(MIGRATIONS_RUN);
+  });
 };
 
-export const runMigrations = (sequelize, migrations) => {
+export const runMigrations = (sequelize, migrations, models) => {
   const model = sequelize.define('migration', MODEL_MAP);
-  migrations.sort((a, b) =>
-    semver.gt(a.version, b.version) ? 1 : semver.lt(a.version, b.version) ? -1 : 0); // eslint-disable-line
+  migrations.sort(
+    (a, b) =>
+      semver.gt(a.version, b.version)
+        ? 1
+        : semver.lt(a.version, b.version)
+          ? -1
+          : 0
+  ); // eslint-disable-line
 
   return new Promise((resolve, reject) => {
     // see if we have a migrations record table, if not assume a new db
@@ -81,7 +103,13 @@ export const runMigrations = (sequelize, migrations) => {
         // get this out of the promise chain, we don't want the catch to fire
         // if the migration fails
         setTimeout(() => {
-          applyMigrations(sequelize, model, migrations, migrationHistory)
+          applyMigrations(
+            sequelize,
+            model,
+            migrations,
+            migrationHistory,
+            models
+          )
             .then(resolve)
             .catch(reject);
         }, 0);

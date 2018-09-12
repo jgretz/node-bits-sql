@@ -85,7 +85,7 @@ class Implementation {
     const tasks = [
       () =>
         shouldRunMigrations
-          ? runMigrations(sequelize, db.migrations)
+          ? runMigrations(sequelize, db.migrations, models)
           : Promise.resolve(),
       () => sequelize.sync({force: forceSync, alter: alterSync}),
       () =>
@@ -206,9 +206,12 @@ export default config => new Database(config, new Implementation());
 
 // export function to allow for creation of a database object from a raw sequelize connection
 // has a little inside baseball configuration
-export const createDatabaseConnectionFromSequelize = connection => {
+export const createDatabaseConnectionFromSequelize = (connection, models) => {
   const db = new Database({connection}, new Implementation());
-  db.execute = execute(db.schema, {}, name => db.models[name]);
+
+  // assign execute
+  db.models = models;
+  db.execute = execute(db.schema, {}, db.getModel);
 
   return db;
 };
